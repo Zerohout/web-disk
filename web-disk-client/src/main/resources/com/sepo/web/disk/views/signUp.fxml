@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sepo.web.disk.controllers.SignUpController"
+      stylesheets="@../styles/mainStyles.css"
+      spacing="10" alignment="CENTER">
+
+    <VBox>
+        <Label text="E-mail"
+               styleClass="field-description-label"/>
+        <TextField fx:id="sighUpEmailTField"/>
+    </VBox>
+    <VBox>
+        <Label text="Repeat e-mail"
+               styleClass="field-description-label"/>
+        <TextField fx:id="signUoRepEmailTField"/>
+    </VBox>
+    <VBox>
+        <Label text="Password"
+               styleClass="field-description-label"/>
+        <HBox alignment="CENTER">
+            <PasswordField fx:id="signUpPassPField" HBox.hgrow="ALWAYS"/>
+            <Button text="show" styleClass="show-pass-button"/>
+        </HBox>
+    </VBox>
+    <VBox>
+        <Label text="Repeat password"
+               styleClass="field-description-label"/>
+        <HBox alignment="CENTER">
+            <PasswordField fx:id="signUpRepPassPField" HBox.hgrow="ALWAYS"/>
+            <Button  text="show" styleClass="show-pass-button"/>
+        </HBox>
+
+    </VBox>
+    <Button text="Sign up"
+            alignment="CENTER"/>
+    <Button text="Cancel" onAction="#cancel"
+    />
+    <padding>
+        <Insets left="20" right="20" top="20" bottom="20"/>
+    </padding>
+</VBox>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="debug" strict="true"
+               name="XMLConfigTest" packages="org.apache.logging.log4j.test">
+    <Filter type="ThresholdFilter" level="trace" />
+
+    <Appenders>
+<!--        &lt;!&ndash;region Files&ndash;&gt;-->
+<!--        <File name="signInController-file" filename="${basePath}/mainController-logfile.log">-->
+<!--            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--        </File>-->
+
+<!--        <File name="signUpController-file" fileName="${basePath}/signInController-logfile.log">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--        </File>-->
+
+<!--        <File name="controlPropertiesHelper-file" fileName="${basePath}/controlPropertiesHelper-logfile.log">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--        </File>-->
+<!--        &lt;!&ndash;endregion&ndash;&gt;-->
+
+<!--        &lt;!&ndash;region Rolling files&ndash;&gt;-->
+<!--        <RollingFile name="signInController-rollingFile" fileName="${basePath}/signInController-rolling.log"-->
+<!--                     filePattern="${basePath}/signInController-rolling-%d{MM-dd-yy}.log.zip">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--            <Policies>-->
+<!--                <TimeBasedTriggeringPolicy interval = "1" />-->
+<!--                <SizeBasedTriggeringPolicy size="150M"/>-->
+<!--            </Policies>-->
+<!--        </RollingFile>-->
+
+<!--        <RollingFile name="signUpController-rollingFile" fileName="${basePath}/signUpController-rolling.log"-->
+<!--                     filePattern="${basePath}/signUpController-rolling-%d{MM-dd-yy}.log.zip">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--            <Policies>-->
+<!--                <TimeBasedTriggeringPolicy interval = "1" />-->
+<!--                <SizeBasedTriggeringPolicy size="150M"/>-->
+<!--            </Policies>-->
+<!--        </RollingFile>-->
+
+<!--        <RollingFile name="controlPropertiesHelper-rollingFile" fileName="${basePath}/controlPropertiesHelper-rolling.log"-->
+<!--                     filePattern="${basePath}/controlPropertiesHelper-rolling-%d{MM-dd-yy}.log.zip">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level ${PID:- } -&#45;&#45; [%t] %-40.40logger{39} : %m%n%throwable"/>-->
+<!--            <Policies>-->
+<!--                <TimeBasedTriggeringPolicy interval = "1" />-->
+<!--                <SizeBasedTriggeringPolicy size="150M"/>-->
+<!--            </Policies>-->
+<!--        </RollingFile>-->
+<!--        &lt;!&ndash;endregion&ndash;&gt;-->
+
+        <Console name="STDOUT">
+            <Layout type="PatternLayout" pattern="%d %m %n" />
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="STDOUT" />
+            <AppenderRef ref="rollingFile" />
+        </Root>
+    </Loggers>
+
+</Configuration>
