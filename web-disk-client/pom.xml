@@ -49,7 +49,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.3</version>
                 <configuration>
-                    <mainClass>com.sepo.web.disk.App</mainClass>
+                    <mainClass>com.sepo.web.disk.ClientApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

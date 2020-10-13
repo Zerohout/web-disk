@@ -1,2 +1,4 @@
 # Project exclude paths
-/web-disk-client/target/
+/web-disk-client/target
+/web-disk-server/target
+/web-disk-common/target

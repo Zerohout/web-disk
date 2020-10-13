@@ -1,6 +1,6 @@
 package com.sepo.web.disk.controllers;
 
-import com.sepo.web.disk.App;
+import com.sepo.web.disk.ClientApp;
 import com.sepo.web.disk.Helpers.ControlPropertiesHelper;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -38,7 +38,7 @@ public class SignInController implements Initializable {
 
     @FXML
     private void signUp(ActionEvent actionEvent) throws IOException {
-        App.setScene("signUp");
+        ClientApp.setScene("signUp");
     }
 
     @FXML
