@@ -1,0 +1,14 @@
+.field-description-label {
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
+.menu{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}

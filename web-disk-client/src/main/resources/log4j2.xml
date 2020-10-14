@@ -62,6 +62,9 @@
             <AppenderRef ref="STDOUT" />
             <AppenderRef ref="rollingFile" />
         </Root>
+        <Logger name="com.sepo.web.disk.controllers.FileManagerController">
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
     </Loggers>
 
 </Configuration>

@@ -32,9 +32,6 @@ public class SignInController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
     }
-    public SignInController() {
-
-    }
 
     @FXML
     private void signUp(ActionEvent actionEvent) throws IOException {
@@ -49,11 +46,12 @@ public class SignInController implements Initializable {
         ControlPropertiesHelper.setPassControlsProp(signInPassTField, signInPassPField, signInShowPassBtn);
     }
 
-    public void signIn(ActionEvent actionEvent) {
-        if (signInEmailTField.getText().isEmpty() || signInEmailTField.getText().isBlank()) {
-            signInErrorLbl.setVisible(true);
-            signInErrorLbl.setText("email is empty");
-        }
+    public void signIn(ActionEvent actionEvent) throws IOException {
+//        if (signInEmailTField.getText().isEmpty() || signInEmailTField.getText().isBlank()) {
+//            signInErrorLbl.setVisible(true);
+//            signInErrorLbl.setText("email is empty");
+//        }
+        ClientApp.setScene("fileManager");
     }
 
     public void passPFieldAction(KeyEvent keyEvent) {
