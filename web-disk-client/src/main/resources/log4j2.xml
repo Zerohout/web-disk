@@ -60,10 +60,19 @@
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="STDOUT" />
-            <AppenderRef ref="rollingFile" />
+<!--            <AppenderRef ref="rollingFile" />-->
         </Root>
-        <Logger name="com.sepo.web.disk.controllers.FileManagerController">
-            <AppenderRef ref="STDOUT"/>
+        <Logger name="com.sepo.web.disk.client.controllers.FileManagerController">
+<!--            <AppenderRef ref="STDOUT"/>-->
+        </Logger>
+        <Logger name="com.sepo.web.disk.client.controllers.SignInController">
+<!--            <AppenderRef ref="STDOUT"/>-->
+        </Logger>
+        <Logger name="com.sepo.web.disk.client.controllers.SignUpController">
+<!--            <AppenderRef ref="STDOUT"/>-->
+        </Logger>
+        <Logger name="com.sepo.web.disk.client.handlers.NetworkHandler">
+<!--            <AppenderRef ref="STDOUT"/>-->
         </Logger>
     </Loggers>
 

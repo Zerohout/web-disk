@@ -1,7 +1,7 @@
-package com.sepo.web.disk.Helpers;
+package com.sepo.web.disk.common.helpers;
 
+import com.sepo.web.disk.common.models.FileInfo;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -187,6 +187,6 @@ public class FileInfoHelper {
                     break;
             }
         }
-        return new Image(ControlPropertiesHelper.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png"));
+        return new Image(FileInfo.class.getResourceAsStream("/icons/" + iconName + ".png"));
     }
 }

@@ -12,9 +12,9 @@
 <?import javafx.scene.layout.StackPane?>
 <VBox alignment="CENTER" maxHeight="Infinity" maxWidth="Infinity" spacing="10" stylesheets="@../styles/mainStyles.css"
       xmlns="http://javafx.com/javafx/8.0.231" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.sepo.web.disk.controllers.SignInController">
+      fx:controller="com.sepo.web.disk.client.controllers.SignInController">
 
-    <Label text="Welcome to Sepo webDisk!" wrapText="true"/>
+    <Label text="Welcome to Sepo webDisk!" wrapText="true" styleClass="header-label"/>
     <Label styleClass="info-label" text="Please sign in." wrapText="true"/>
 
     <VBox>
@@ -35,13 +35,14 @@
         </HBox>
     </VBox>
 
-    <Label fx:id="signInErrorLbl" visible="false" styleClass="error-label" minHeight="-Infinity"/>
+    <Label fx:id="signInErrorLbl" visible="false" styleClass="error-label" minHeight="-Infinity" VBox.vgrow="ALWAYS"/>
     <Button fx:id="signInBtn" alignment="CENTER" text="Sign in" onAction="#signIn" disable="true"/>
 
     <Separator/>
 
     <Label styleClass="info-label" text="Don't have account?" wrapText="true"/>
     <Button alignment="CENTER" onAction="#signUp" text="Sign up"/>
+    <Button fx:id="signInRefreshConnectionBtn" alignment="CENTER" onAction="#refreshConnectionAction" text="Refresh connection" visible="false"/>
 
     <padding>
         <Insets bottom="20" left="20" right="20" top="20"/>

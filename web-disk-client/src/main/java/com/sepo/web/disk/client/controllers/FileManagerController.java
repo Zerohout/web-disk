@@ -1,8 +1,7 @@
-package com.sepo.web.disk.controllers;
+package com.sepo.web.disk.client.controllers;
 
 
-import com.sepo.web.disk.commands.ServiceCommand;
-import com.sepo.web.disk.models.FileInfo;
+import com.sepo.web.disk.common.models.FileInfo;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;

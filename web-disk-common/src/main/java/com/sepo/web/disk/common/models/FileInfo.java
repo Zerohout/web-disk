@@ -1,13 +1,11 @@
-package com.sepo.web.disk.models;
+package com.sepo.web.disk.common.models;
 
-import com.sepo.web.disk.Helpers.ControlPropertiesHelper;
-import com.sepo.web.disk.Helpers.FileInfoHelper;
+import com.sepo.web.disk.common.helpers.FileInfoHelper;
 import javafx.scene.image.Image;
 
-import java.io.File;
 import java.nio.file.Path;
 
-public class FileInfo {
+public class FileInfo implements Sendable {
     private String fileFullName;
     private String filePath;
     private long fileSize;

@@ -1,4 +1,4 @@
-package com.sepo.web.disk.Helpers;
+package com.sepo.web.disk.client.Helpers;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;

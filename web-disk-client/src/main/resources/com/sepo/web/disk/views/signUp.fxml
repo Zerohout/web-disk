@@ -9,41 +9,40 @@
 <?import javafx.geometry.Insets?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.sepo.web.disk.controllers.SignUpController"
+      fx:controller="com.sepo.web.disk.client.controllers.SignUpController"
       stylesheets="@../styles/mainStyles.css"
-      spacing="10" alignment="CENTER">
+      spacing="10" alignment="CENTER" prefWidth="300" prefHeight="400">
 
-    <VBox>
+    <VBox spacing="10">
         <Label text="E-mail"
                styleClass="field-description-label"/>
         <TextField fx:id="sighUpEmailTField"/>
-    </VBox>
-    <VBox>
+
         <Label text="Repeat e-mail"
                styleClass="field-description-label"/>
-        <TextField fx:id="signUoRepEmailTField"/>
-    </VBox>
-    <VBox>
+        <TextField fx:id="signUpRepEmailTField"/>
+
         <Label text="Password"
                styleClass="field-description-label"/>
-        <HBox alignment="CENTER">
+        <HBox alignment="CENTER" spacing="5">
             <PasswordField fx:id="signUpPassPField" HBox.hgrow="ALWAYS"/>
             <Button text="show" styleClass="show-pass-button"/>
         </HBox>
-    </VBox>
-    <VBox>
+
         <Label text="Repeat password"
                styleClass="field-description-label"/>
-        <HBox alignment="CENTER">
+        <HBox alignment="CENTER" spacing="5">
             <PasswordField fx:id="signUpRepPassPField" HBox.hgrow="ALWAYS"/>
-            <Button  text="show" styleClass="show-pass-button"/>
+            <Button text="show" styleClass="show-pass-button"/>
         </HBox>
 
+        <Label fx:id="errorLbl" styleClass="error-label" visible="false"/>
+        <Label fx:id="successLbl" styleClass="success-label" visible="false"/>
+
+        <Button text="Sign up"
+                onAction="#signUpAction" maxWidth="Infinity"/>
+        <Button text="Back" onAction="#backAction" maxWidth="Infinity"/>
     </VBox>
-    <Button text="Sign up"
-            alignment="CENTER"/>
-    <Button text="Cancel" onAction="#cancel"
-    />
     <padding>
         <Insets left="20" right="20" top="20" bottom="20"/>
     </padding>

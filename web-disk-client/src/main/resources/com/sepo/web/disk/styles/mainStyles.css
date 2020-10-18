@@ -1,5 +1,5 @@
 /*region labels */
-.label {
+.header-label {
     -fx-font-family: "Comic Sans MS", sans-serif;
     -fx-font-size: 30px;
     -fx-font-weight: bold;
@@ -29,6 +29,15 @@
     -fx-wrap-text: true;
     -fx-text-alignment: center;
     -fx-text-fill: #ff3b2d;
+}
+
+.success-label{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+    -fx-text-fill: #3baa11;
 }
 
 /*endregion*/
