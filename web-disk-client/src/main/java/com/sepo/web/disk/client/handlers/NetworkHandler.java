@@ -6,17 +6,14 @@ import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.*;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.DefaultFileRegion;
+import io.netty.channel.*;
 import io.netty.handler.timeout.IdleState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 
-
+@ChannelHandler.Sharable
 public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnActionCallback {
     private static final Logger logger = LogManager.getLogger(FileManagerController.class);
     private FileInfo currFileInfo;
@@ -43,7 +40,30 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
         }
     }
 
-    private int count = 0;
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        logger.info("Channel Registered");
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelUnregistered(ctx);
+        logger.info("Channel Unregistered");
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        logger.info("Channel Active");
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        logger.info("Channel Inactive");
+    }
 
     // главная логика обмена сообщениями с клиентом
     @Override
@@ -114,7 +134,6 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
                     logger.info("get fileInfo");
                     otherCallback.callback(null, ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb));
                     send(new ClientRequest(ClientRequest.Requests.UPDATE));
-                    count++;
                     break;
                 }
 
@@ -143,8 +162,18 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
                                     break;
                                 case SUCCESS:
                                     logger.info("get GET_FILE_INFO respond, SUCCESS result. Send file.");
-                                    var fileReg = new DefaultFileRegion(currFileInfo.getPath().toFile(), 0, currFileInfo.getFileSize());
-                                    Network.getInstance().getCurrentChannel().writeAndFlush(fileReg);
+                                   sendFile(currFileInfo, Network.getInstance().getCurrentChannel(), f -> {
+                                       if (!f.isSuccess()) {
+                                           logger.info("Ошибка при передаче файла");
+
+                                           f.cause().printStackTrace();
+
+                                       }
+                                       if (f.isSuccess()) {
+                                           logger.info("Файл успешно передан");
+                                       }
+                                   });
+
                                     break;
                             }
                             break;
@@ -168,10 +197,17 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
         bb.release();
     }
 
+    private void sendFile(FileInfo fileInfo, Channel ctx, ChannelFutureListener finishListener){
+        var fileReg = new DefaultFileRegion(fileInfo.getPath().toFile(), 0, currFileInfo.getFileSize());
+        var transferOperationFuture = ctx.writeAndFlush(fileReg).syncUninterruptibly();
+        if (finishListener != null) {
+            transferOperationFuture.addListener(finishListener);
+        }
+    }
+
     public void send(Sendable obj) {
         Network.getInstance().getCurrentChannel().writeAndFlush(ObjectEncoderDecoder.EncodeObjToByteBuf(obj));
     }
-
 
     @Override
     public void callback(Object... args) {

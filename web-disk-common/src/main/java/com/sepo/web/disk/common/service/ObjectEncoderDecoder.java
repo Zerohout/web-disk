@@ -30,6 +30,7 @@ public class ObjectEncoderDecoder {
         bb.readBytes(bytes);
         try (var bais = new ByteArrayInputStream(bytes);
              var ois = new ObjectInputStream(bais)) {
+
             return ois.readObject();
         } catch (Exception ex) {
             ex.printStackTrace();
