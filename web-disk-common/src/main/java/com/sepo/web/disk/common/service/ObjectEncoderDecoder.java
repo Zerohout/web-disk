@@ -1,16 +1,12 @@
 package com.sepo.web.disk.common.service;
 
-import com.sepo.web.disk.common.models.ClientState;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.serialization.ClassResolvers;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ObjectEncoderDecoder {
     private static final Logger logger = LogManager.getLogger(ObjectEncoderDecoder.class);
