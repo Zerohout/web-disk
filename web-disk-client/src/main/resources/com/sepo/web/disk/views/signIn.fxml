@@ -30,18 +30,18 @@
                 <PasswordField fx:id="signInPassPField" alignment="CENTER" onKeyReleased="#passPFieldAction"/>
                 <TextField fx:id="signInPassTField" alignment="CENTER" visible="false" onKeyReleased="#passTFieldAction"/>
             </StackPane>
-            <Button fx:id="signInShowPassBtn" disable="true" minHeight="-Infinity" onAction="#showPass"
+            <Button fx:id="signInShowPassBtn" disable="true" minHeight="-Infinity" onAction="#showPassAction"
                     styleClass="show-pass-button" text="show"/>
         </HBox>
     </VBox>
 
     <Label fx:id="signInErrorLbl" visible="false" styleClass="error-label" minHeight="-Infinity" VBox.vgrow="ALWAYS"/>
-    <Button fx:id="signInBtn" alignment="CENTER" text="Sign in" onAction="#signIn" disable="true"/>
+    <Button fx:id="signInBtn" alignment="CENTER" text="Sign in" onAction="#signInAction" disable="true"/>
 
     <Separator/>
 
     <Label styleClass="info-label" text="Don't have account?" wrapText="true"/>
-    <Button alignment="CENTER" onAction="#signUp" text="Sign up"/>
+    <Button alignment="CENTER" onAction="#signUpAction" text="Sign up"/>
     <Button fx:id="signInRefreshConnectionBtn" alignment="CENTER" onAction="#refreshConnectionAction" text="Refresh connection" visible="false"/>
 
     <padding>

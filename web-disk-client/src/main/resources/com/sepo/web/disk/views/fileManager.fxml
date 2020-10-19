@@ -25,8 +25,9 @@ stylesheets="@../styles/fileManagerStyles.css">
             <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
                 <Label styleClass="field-description-label" text="Downloaded"/>
                 <!--Client downloaded files-->
-                <TreeView fx:id="clientDownloadedFilesTView" maxWidth="Infinity" prefHeight="200.0" showRoot="false"
-                          VBox.vgrow="ALWAYS">
+                <TreeView fx:id="clientDownloadedFilesTView" maxWidth="Infinity"
+                          prefHeight="200.0" showRoot="false"
+                          VBox.vgrow="ALWAYS" onDragOver="#clientTViewDragOverAction" onDragDropped="#clientTViewDragDroppedAction">
 
                 </TreeView>
             </VBox>
@@ -49,7 +50,8 @@ stylesheets="@../styles/fileManagerStyles.css">
             <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
                 <Label styleClass="field-description-label" text="Server storage"/>
                 <!--Server storage-->
-                <TreeView fx:id="serverStorageTView" maxWidth="Infinity" prefHeight="200.0" VBox.vgrow="ALWAYS"/>
+                <TreeView fx:id="serverStorageTView" maxWidth="Infinity" prefHeight="200.0" VBox.vgrow="ALWAYS"
+                          onDragOver="#serverTViewDragOverAction" onDragDropped="#serverTViewDragDroppedAction"/>
             </VBox>
             <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
                 <Label styleClass="field-description-label" text="File info"/>

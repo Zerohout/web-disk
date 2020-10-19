@@ -7,15 +7,28 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class Network {
 
+    public static String serverStorageName = "serverStorage";
     private static Network ourInstance = new Network();
 
     public static Network getInstance() {
         return ourInstance;
     }
 
-    private Network(){}
+    private Network() {
+        try {
+            if (Files.notExists(Path.of(serverStorageName))) {
+                Files.createDirectory(Path.of(serverStorageName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private SocketChannel currentChannel;
 
@@ -47,7 +60,7 @@ public class Network {
         }
     }
 
-    public void stop(){
+    public void stop() {
         currentChannel.close();
     }
 }

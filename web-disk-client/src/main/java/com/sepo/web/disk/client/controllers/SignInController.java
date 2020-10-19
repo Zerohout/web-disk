@@ -1,24 +1,14 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.client.ClientApp;
-import com.sepo.web.disk.client.Helpers.CallbackValue;
-import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
-import com.sepo.web.disk.client.Helpers.OnActionCallback;
-import com.sepo.web.disk.client.handlers.NetworkHandler;
+import com.sepo.web.disk.client.Helpers.*;
 import com.sepo.web.disk.client.network.Network;
-import com.sepo.web.disk.common.models.ClientRequest;
-import com.sepo.web.disk.common.models.ClientState;
-import com.sepo.web.disk.common.models.ServerRespond;
-import com.sepo.web.disk.common.models.User;
-import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
+import com.sepo.web.disk.common.models.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,18 +34,14 @@ public class SignInController implements Initializable, OnActionCallback {
     @FXML
     private PasswordField signInPassPField;
 
-    public static User getCurrUser() {
-        return currUser;
-    }
-
-    private static User currUser;
+    //TODO: передавать User иным способом (убрать статику)
+    public static User currUser;
 
     private static final Logger logger = LogManager.getLogger(SignInController.class);
 
-    private OnActionCallback currCallback;
-    private OnActionCallback netHandlerCallback;
+    private OnActionCallback networkCallback;
 
-    //TODO: переместить соединение с сервером
+    //TODO: переместить соединение с сервером, т.к. идет reconnect при переходе на данную сцену
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         var connection = new Thread(this::connectToServer);
@@ -65,14 +51,14 @@ public class SignInController implements Initializable, OnActionCallback {
     }
 
     @FXML
-    private void signUp(ActionEvent actionEvent) throws IOException {
-        netHandlerCallback.callback(ClientState.State.STATE, ClientState.Wait.RESULT);
-        netHandlerCallback.callback(new ClientRequest(ClientRequest.Requests.STATE));
+    private void signUpAction(ActionEvent actionEvent) throws IOException {
+        networkCallback.callback(ClientState.State.STATE, ClientState.Wait.RESULT);
+        networkCallback.callback(new ClientRequest(ClientRequest.Requests.STATE));
         ClientApp.setScene("signUp");
     }
 
     @FXML
-    private void showPass(ActionEvent actionEvent) {
+    private void showPassAction(ActionEvent actionEvent) {
         if (signInPassPField.getText().isEmpty()) {
             return;
         }
@@ -80,11 +66,12 @@ public class SignInController implements Initializable, OnActionCallback {
         ControlPropertiesHelper.setPassControlsProp(signInPassTField, signInPassPField, signInShowPassBtn);
     }
 
-    public void signIn(ActionEvent actionEvent) {
-        netHandlerCallback.callback(ClientState.State.AUTH, ClientState.Wait.RESPOND);
+    @FXML
+    public void signInAction(ActionEvent actionEvent) {
+        networkCallback.callback(ClientState.State.AUTH, ClientState.Wait.RESPOND);
         currUser = new User(signInEmailTField.getText(), signInPassPField.getText());
         logger.info("Send AUTH request");
-        netHandlerCallback.callback(new ClientRequest(ClientRequest.Requests.AUTH));
+        networkCallback.callback(new ClientRequest(ClientRequest.Requests.AUTH));
     }
 
     public void passPFieldAction(KeyEvent keyEvent) {
@@ -134,11 +121,12 @@ public class SignInController implements Initializable, OnActionCallback {
                         switch (resp.getCurrResult()) {
                             case PROCESSING:
                                 logger.info("send User");
-                                netHandlerCallback.callback(currUser);
+                                networkCallback.callback(currUser);
                                 break;
                             case SUCCESS:
                                 Platform.runLater(() -> {
                                     try {
+                                        ControlPropertiesHelper.userEmail = currUser.getEmail();
                                         ClientApp.setScene("fileManager");
                                     } catch (IOException e) {
                                         e.printStackTrace();
@@ -164,14 +152,12 @@ public class SignInController implements Initializable, OnActionCallback {
         }
     }
 
-    public void setCallback(OnActionCallback callback) {
-        this.netHandlerCallback = callback;
-    }
 
     @Override
-    public OnActionCallback getCallback() {
-        return this.currCallback;
+    public void setOtherCallback(OnActionCallback callback) {
+        this.networkCallback = callback;
     }
+
 }
 
 

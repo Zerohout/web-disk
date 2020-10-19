@@ -62,13 +62,8 @@ public class SignUpController implements Initializable, OnActionCallback {
     }
 
     @Override
-    public void setCallback(OnActionCallback callback) {
+    public void setOtherCallback(OnActionCallback callback) {
         networkCallback = callback;
-    }
-
-    @Override
-    public OnActionCallback getCallback() {
-        return null;
     }
 
     @Override

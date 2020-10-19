@@ -1,7 +1,13 @@
 package com.sepo.web.disk.client.controllers;
 
 
+import com.sepo.web.disk.client.ClientApp;
+import com.sepo.web.disk.client.Helpers.OnActionCallback;
+import com.sepo.web.disk.client.network.Network;
+import com.sepo.web.disk.common.models.ClientRequest;
+import com.sepo.web.disk.common.models.ClientState;
 import com.sepo.web.disk.common.models.FileInfo;
+import com.sepo.web.disk.common.models.ServerRespond;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -19,14 +25,19 @@ import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 
+public class FileManagerController implements Initializable, OnActionCallback {
+    private String clientFolderName = "downloaded";
+    private String userEmail = "";
+    private TreeItem<FileInfo> serverRoot;
+    private ArrayList<FileInfo> serverFiles = new ArrayList<>();
 
-
-public class FileManagerController implements Initializable {
-    private final String CLIENT_FOLDER_NAME = "downloaded";
-    private final String SERVER_STORAGE_NAME = "serverStorage";
+    private String userServerFolderName;
+    private OnActionCallback networkCallback;
 
     private static final Logger logger = LogManager.getLogger(FileManagerController.class);
     @FXML
@@ -40,12 +51,10 @@ public class FileManagerController implements Initializable {
     private ObservableList<FileInfo> clientFiles = FXCollections.observableArrayList();
 
     public FileManagerController() throws IOException {
-        if (Files.notExists(Path.of(CLIENT_FOLDER_NAME))) {
-            Files.createDirectory(Path.of(CLIENT_FOLDER_NAME));
+        if (Files.notExists(Path.of(clientFolderName))) {
+            Files.createDirectory(Path.of(clientFolderName));
         }
-        if (Files.notExists(Path.of(SERVER_STORAGE_NAME))) {
-            Files.createDirectory(Path.of(SERVER_STORAGE_NAME));
-        }
+
     }
 
 
@@ -63,40 +72,57 @@ public class FileManagerController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        Network.getInstance().getNetworkHandler().setOtherCallback(this);
+        userServerFolderName = SignInController.currUser.getEmail();
         initClientTransferFilesLView();
         try {
             var root = new TreeItem<FileInfo>();
             root.setExpanded(true);
             clientDownloadedFilesTView.setRoot(root);
-            initClientDownloadedFilesTView(Path.of(CLIENT_FOLDER_NAME), root);
+            serverStorageTView.setRoot(serverRoot);
+            initClientDownloadedFilesTView(Path.of(clientFolderName), root);
+            initTreeViews();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        //TODO: Разобраться с java.io.EOFException
+//        networkCallback.callback(ClientState.State.UPDATE, ClientState.Wait.RESPOND);
+//        networkCallback.callback(new ClientRequest(ClientRequest.Requests.UPDATE));
+
+
     }
 
-    private void initClientDownloadedFilesTView(Path test, TreeItem<FileInfo> root) throws IOException {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(test)) {
-            for (var path : stream) {
-                var isDirectory = Files.isDirectory(path);
-                var file = new File(path.toUri());
-                var fileInfo = new FileInfo()
-                        .setFileFullName(file.getName())
-                        .setFilePath(file.getAbsolutePath())
-                        .setFileSize(Files.size(path))
-                        .isFolder(isDirectory)
-                        .setIcon(path);
+    // получение и составление дерева директорий в папке downloaded
+    private void initClientDownloadedFilesTView(Path path, TreeItem<FileInfo> root) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+            for (var p : stream) {
+                var isDirectory = Files.isDirectory(p);
+                var fileInfo = new FileInfo(p);
                 var treeItem = new TreeItem<>(fileInfo);
-
                 var icon = new ImageView(fileInfo.getIcon());
-                icon.setFitWidth(15);
-                icon.setFitHeight(15);
+                icon.setFitWidth(17);
+                icon.setFitHeight(17);
                 treeItem.setGraphic(icon);
                 root.getChildren().add(treeItem);
                 if (isDirectory) {
-                    initClientDownloadedFilesTView(path, treeItem);
+                    initClientDownloadedFilesTView(p, treeItem);
                 }
             }
+        }
+    }
+
+    private void updateServerFiles(ArrayList<FileInfo> files, TreeItem<FileInfo> root) {
+        var _root = root;
+
+        for (var file : files) {
+            var treeItem = new TreeItem<>(file);
+            var icon = new ImageView(file.getIcon());
+            icon.setFitWidth(17);
+            icon.setFitHeight(17);
+            treeItem.setGraphic(icon);
+            _root.getChildren().add(treeItem);
+            if (file.isFolder()) _root = treeItem;
         }
     }
 
@@ -105,5 +131,66 @@ public class FileManagerController implements Initializable {
         clientTransferFilesLView.setItems(clientFiles);
     }
 
+    private void initTreeViews() {
+        clientDownloadedFilesTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        serverStorageTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+    }
 
+
+    @Override
+    public void setOtherCallback(OnActionCallback callback) {
+        this.networkCallback = callback;
+    }
+
+    @Override
+    public void callback(Object... args) {
+        if (args.length == 1) {
+            if (args[0] instanceof ServerRespond) {
+                if (((ServerRespond) args[0]).getCurrResult() == ServerRespond.Results.SUCCESS) {
+                    updateServerFiles(serverFiles, serverRoot);
+                }
+            }
+        }
+        if (args.length == 2) {
+            if (args[0] == null && args[1] instanceof FileInfo) {
+                var file = (FileInfo) args[1];
+                serverFiles.add(file);
+            }
+        }
+    }
+
+    @FXML
+    public void clientTViewDragOverAction(DragEvent dragEvent) {
+        if (dragEvent.getDragboard().hasFiles()) {
+            dragEvent.acceptTransferModes(TransferMode.ANY);
+        }
+    }
+
+    @FXML
+    public void clientTViewDragDroppedAction(DragEvent dragEvent) {
+        File file = dragEvent.getDragboard().getFiles().get(0);
+        var fileInfo = new FileInfo(file.toPath());
+        clientDownloadedFilesTView.getRoot().getChildren().add(new TreeItem<>(fileInfo));
+        try {
+            Files.copy(file.toPath(),Path.of(clientFolderName).resolve(file.getName()));
+            ClientApp.setScene("fileManager");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @FXML
+    public void serverTViewDragOverAction(DragEvent dragEvent) {
+        if (dragEvent.getDragboard().hasFiles()) {
+            dragEvent.acceptTransferModes(TransferMode.ANY);
+        }
+    }
+
+    @FXML
+    public void serverTViewDragDroppedAction(DragEvent dragEvent) {
+        File file = dragEvent.getDragboard().getFiles().get(0);
+        var fileInfo = new FileInfo(file.toPath());
+        networkCallback.callback(fileInfo);
+    }
 }

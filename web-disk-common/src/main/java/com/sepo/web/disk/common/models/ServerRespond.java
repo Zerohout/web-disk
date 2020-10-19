@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class ServerRespond extends SystemInfo implements Serializable {
     public enum Responds {
-        AUTH, REG, UPDATE, SEND, GET, RENAME, RESULT
+        AUTH, REG, UPDATE, SEND, GET_FILE_INFO, GET_FILE, RENAME, RESULT
     }
 
     public enum Results {

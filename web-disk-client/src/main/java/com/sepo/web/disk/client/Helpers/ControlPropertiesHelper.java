@@ -5,6 +5,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 public class ControlPropertiesHelper {
+    public static String userEmail;
+
     public static void setPassControlsProp(TextField passTField, PasswordField passPField, Button passShowBtn) {
         var passTFieldIsVisible = passTField.isVisible();
         passTField.setVisible(!passTFieldIsVisible);

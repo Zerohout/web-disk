@@ -7,7 +7,7 @@ public class ServerState extends SystemInfo implements Serializable {
         IDLE, AUTH, REG, SEND, GET;
     }
     public enum Wait{
-        DATA, REQUEST
+        DATA, REQUEST, FILE
     }
 
     private State currState;

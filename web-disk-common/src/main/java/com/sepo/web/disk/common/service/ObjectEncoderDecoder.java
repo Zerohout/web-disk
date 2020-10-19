@@ -3,10 +3,17 @@ package com.sepo.web.disk.common.service;
 import com.sepo.web.disk.common.models.ClientState;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ObjectEncoderDecoder {
+    private static final Logger logger = LogManager.getLogger(ObjectEncoderDecoder.class);
 
     public static ByteBuf EncodeObjToByteBuf(Object obj) {
         try (var baos = new ByteArrayOutputStream();
@@ -22,15 +29,26 @@ public class ObjectEncoderDecoder {
 
     }
 
-    public static Object DecodeByteBufToObject(ByteBuf bb) {
+    public static Object DecodeByteBufToObject(ChannelHandlerContext ctx,ByteBuf bb) {
         var bytes = new byte[bb.readableBytes()];
         bb.readBytes(bytes);
         try (var bais = new ByteArrayInputStream(bytes);
              var ois = new ObjectInputStream(bais)) {
             return ois.readObject();
         } catch (Exception ex) {
-            throw new RuntimeException(ex.getMessage());
+            ex.printStackTrace();
+            throw new RuntimeException("Фигня какая-то");
         }
     }
+//    public static Object DecodeByteBufToObject(ChannelHandlerContext ctx, ByteBuf in) {
+//        CustomDecoder decoder = new CustomDecoder(ClassResolvers.cacheDisabled(null));
+//        try {
+//            return decoder.decode(ctx, in);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw new RuntimeException(e.getMessage());
+//        }
+//
+//    }
 
 }
