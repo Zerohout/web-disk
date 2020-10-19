@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import static com.sepo.web.disk.server.connection.Network.serverStorageName;
 
+@ChannelHandler.Sharable
 public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
     private ServerState currentState;
@@ -40,33 +41,49 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        logger.info("Channel Registered");
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelUnregistered(ctx);
+        logger.info("Channel Unregistered");
+    }
+
+
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf bb = (ByteBuf) msg;
         User user;
 
         // Отлов команд Cancel и Get_State
         // использую bb.copy так как после декодирования bb буфер каким-то образом очищается сам
-        if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb.copy()) instanceof Sendable) {
-            var temp = (Sendable) ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb.copy());
-            if (temp instanceof ClientRequest) {
-                var req = (ClientRequest) temp;
-                switch ((req).getCurrRequest()) {
-                    case STATE:
-                        logger.info("get STATE request");
-                        send(ctx, currentState);
-                        bb.release();
-                        return;
-                    case CANCEL:
-                        logger.info("get CANCEL request");
-                        currentState.setCurrState(ServerState.State.IDLE);
-                        bb.release();
-                        currFileInfoIndex = 0;
+        if(currentState.getCurrState() != ServerState.State.GET) {
+            if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) instanceof Sendable) {
+                var temp = (Sendable) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy());
+                if (temp instanceof ClientRequest) {
+                    var req = (ClientRequest) temp;
+                    switch ((req).getCurrRequest()) {
+                        case STATE:
+                            logger.info("get STATE request");
+                            send(ctx, currentState);
+                            bb.release();
+                            return;
+                        case CANCEL:
+                            logger.info("get CANCEL request");
+                            currentState.setCurrState(ServerState.State.IDLE);
+                            bb.release();
+                            currFileInfoIndex = 0;
 
-                        return;
+                            return;
+                    }
+
                 }
-
             }
         }
+
 
         // Главная логика обмена сообщениями c сервером
         switch (currentState.getCurrState()) {
@@ -164,6 +181,17 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                         break;
                     case FILE:
                         logger.info("get file");
+
+//                        var out = new BufferedOutputStream(new FileOutputStream(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()));
+//                        var receivedBytes = 0L;
+//                        while (bb.readableBytes() > 0) {
+//                            out.write(bb.readByte());
+//                            receivedBytes++;
+//                            if(receivedBytes == currFileInfo.getFileSize()){
+//                                break;
+//                            }
+//                        }
+//                        out.close();
                         try (var out = new BufferedOutputStream(new FileOutputStream(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()))) {
                             var receivedBytes = 0L;
                             while (bb.readableBytes() > 0) {
