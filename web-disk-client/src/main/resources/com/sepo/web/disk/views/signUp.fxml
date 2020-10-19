@@ -26,14 +26,14 @@
                styleClass="field-description-label"/>
         <HBox alignment="CENTER" spacing="5">
             <PasswordField fx:id="signUpPassPField" HBox.hgrow="ALWAYS"/>
-            <Button text="show" styleClass="show-pass-button"/>
+            <Button text="show" styleClass="show-pass-button" onAction="#showSignUpPFieldAction"/>
         </HBox>
 
         <Label text="Repeat password"
                styleClass="field-description-label"/>
         <HBox alignment="CENTER" spacing="5">
             <PasswordField fx:id="signUpRepPassPField" HBox.hgrow="ALWAYS"/>
-            <Button text="show" styleClass="show-pass-button"/>
+            <Button text="show" styleClass="show-pass-button" onAction="#showSignUpRepPassPFieldAction"/>
         </HBox>
 
         <Label fx:id="errorLbl" styleClass="error-label" visible="false"/>

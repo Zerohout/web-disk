@@ -25,12 +25,29 @@ public class ObjectEncoderDecoder {
 
     }
 
-    public static Object DecodeByteBufToObject(ChannelHandlerContext ctx,ByteBuf bb) {
-        var bytes = new byte[bb.readableBytes()];
-        bb.readBytes(bytes);
-        try (var bais = new ByteArrayInputStream(bytes);
-             var ois = new ObjectInputStream(bais)) {
+    //    public static Object DecodeByteBufToObject(ChannelHandlerContext ctx,ByteBuf bb) {
+//        var bytes = new byte[bb.readableBytes()];
+//        bb.readBytes(bytes);
+//        try (var bais = new ByteArrayInputStream(bytes);
+//             var ois = new ObjectInputStream(bais)) {//
+//            return ois.readObject();
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            throw new RuntimeException("Фигня какая-то");
+//        }
+//    }
 
+    public static Object DecodeByteBufToObject(ChannelHandlerContext ctx, ByteBuf bb) {
+        byte[] arr;
+        if (bb.hasArray()) {
+            arr = bb.array();
+        } else {
+            var length = bb.readableBytes();
+            arr = new byte[length];
+            bb.getBytes(bb.readerIndex(), arr);
+        }
+        try (var bais = new ByteArrayInputStream(arr);
+             var ois = new ObjectInputStream(bais)) {
             return ois.readObject();
         } catch (Exception ex) {
             ex.printStackTrace();

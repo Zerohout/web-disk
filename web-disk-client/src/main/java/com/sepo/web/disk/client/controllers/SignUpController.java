@@ -108,4 +108,11 @@ public class SignUpController implements Initializable, OnActionCallback {
     }
 
 
+    public void showSignUpPFieldAction(ActionEvent actionEvent) {
+
+    }
+
+    public void showSignUpRepPassPFieldAction(ActionEvent actionEvent) {
+
+    }
 }

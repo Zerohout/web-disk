@@ -18,7 +18,8 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
     private static final Logger logger = LogManager.getLogger(FileManagerController.class);
     private FileInfo currFileInfo;
 
-    public ClientState currentState = new ClientState(ClientState.State.IDLE, ClientState.Wait.RESPOND);
+    public ClientState currentState;
+    //= new ClientState(ClientState.State.IDLE, ClientState.Wait.RESPOND);
     private OnActionCallback otherCallback;
 
     public NetworkHandler() {
@@ -55,22 +56,33 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
+        //super.channelActive(ctx);
         logger.info("Channel Active");
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        super.channelInactive(ctx);
+        //super.channelInactive(ctx);
         logger.info("Channel Inactive");
     }
 
     // главная логика обмена сообщениями с клиентом
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if(currentState != null) {
+            logger.info("Запуск метода channelRead, текущее состояние - " +
+                    currentState.getCurrState().toString() +
+                    ", текущее ожидание - " + currentState.getCurrWait().toString());
+        }else{
+            logger.info("Текущее состояние - null");
+        }
         ByteBuf bb = (ByteBuf) msg;
         ServerRespond respond;
         ServerState serverState;
+
+        if(currentState == null){
+            currentState = new ClientState(ClientState.State.IDLE, ClientState.Wait.RESPOND);
+        }
 
         switch (currentState.getCurrState()) {
             case IDLE:
@@ -181,7 +193,7 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
                             switch (respond.getCurrResult()) {
                                 case SUCCESS:
                                     logger.info("server get file.");
-                                    currentState.setCurrState(ClientState.State.IDLE).setCurrWait(ClientState.Wait.RESPOND);
+                                    //currentState.setCurrState(ClientState.State.IDLE).setCurrWait(ClientState.Wait.RESPOND);
                                     break;
                                 case FAILURE:
                                     logger.info("server not get file");
@@ -223,7 +235,12 @@ public class NetworkHandler extends ChannelInboundHandlerAdapter implements OnAc
             }
         } else if (args.length == 2) {
             if (args[0] instanceof ClientState.State) {
+                if(currentState == null){
+                    currentState = new ClientState((ClientState.State) args[0],(ClientState.Wait) args[1]);
+                }else{
+
                 currentState.setCurrState((ClientState.State) args[0]).setCurrWait((ClientState.Wait) args[1]);
+                }
             }
         }
     }
