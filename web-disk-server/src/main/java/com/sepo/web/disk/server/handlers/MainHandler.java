@@ -1,6 +1,7 @@
 package com.sepo.web.disk.server.handlers;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -21,7 +22,7 @@ import static com.sepo.web.disk.server.connection.Network.serverStorageName;
 @ChannelHandler.Sharable
 public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
-    private ServerState currentState;
+    private ServerState currentState = new ServerState(ServerState.State.IDLE, ServerState.Wait.REQUEST);
     private Path userStoragePath;
     private ArrayList<FileInfo> fileInfoList = new ArrayList<>();
     private int currFileInfoIndex = 0;
@@ -30,7 +31,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        currentState = new ServerState(ServerState.State.IDLE, ServerState.Wait.REQUEST);
+
         logger.info("Client connected...");
     }
 
@@ -55,12 +56,19 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (currentState != null) {
+            logger.info("Запуск метода channelRead, текущее состояние - " +
+                    currentState.getCurrState().toString() +
+                    ", текущее ожидание - " + currentState.getCurrWait().toString());
+        } else {
+            logger.info("Текущее состояние - null");
+        }
         ByteBuf bb = (ByteBuf) msg;
         User user;
 
         // Отлов команд Cancel и Get_State
         // использую bb.copy так как после декодирования bb буфер каким-то образом очищается сам
-        if(currentState.getCurrState() != ServerState.State.GET) {
+        if (currentState.getCurrState() != ServerState.State.GET) {
             if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) instanceof Sendable) {
                 var temp = (Sendable) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy());
                 if (temp instanceof ClientRequest) {
@@ -91,7 +99,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 //                if (ObjectEncoderDecoder.DecodeByteBufToObject(bb.copy()) instanceof ServerRespond) {
 //                    return;
 //                }
-                var request = (ClientRequest) ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb);
+                var request = (ClientRequest) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
 
                 switch (request.getCurrRequest()) {
                     case AUTH:
@@ -131,7 +139,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     case REQUEST:
                         break;
                     case DATA:
-                        user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb);
+                        user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
                         logger.info("Get user " + user.getEmail() + " | " + user.getPassword());
 
                         if (Database.getUser(user.getEmail(), user.getPassword()) == null) {
@@ -156,7 +164,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     case REQUEST:
                         break;
                     case DATA:
-                        user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb);
+                        user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
                         logger.info("Get new User " + user.getEmail() + " | " + user.getPassword());
 
                         if (Database.insertUser(user)) {
@@ -174,8 +182,8 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             case GET:
                 switch (currentState.getCurrWait()) {
                     case DATA:
-                        currFileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(ctx,bb);
-                        logger.info(String.format("get fileInfo. File - %s, size %,d.",currFileInfo.getFileFullName(), currFileInfo.getFileSize()));
+                        currFileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
+                        logger.info(String.format("get fileInfo. File - %s, size %,d.", currFileInfo.getFileFullName(), currFileInfo.getFileSize()));
                         currentState.setCurrWait(ServerState.Wait.FILE);
                         send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE_INFO, ServerRespond.Results.SUCCESS));
                         break;
@@ -193,29 +201,30 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 //                        }
 //                        out.close();
                         try (var out = new BufferedOutputStream(new FileOutputStream(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()))) {
-                            var receivedBytes = 0L;
+
+                            logger.info("байтов к прочтению - "+ bb.readableBytes());
                             while (bb.readableBytes() > 0) {
                                 out.write(bb.readByte());
-                                receivedBytes++;
-                                if(receivedBytes == currFileInfo.getFileSize()){
-                                    break;
-                                }
                             }
                         } catch (IOException ex) {
                             ex.printStackTrace();
                             logger.info("file not got.");
                             send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE, ServerRespond.Results.FAILURE));
-                            currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
-                            bb.release();
+                            if (Files.size(new File(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()).toPath()) ==
+                                    currFileInfo.getFileSize()) {
+                                currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
+                                bb.release();
+
+                            }
                             return;
                         }
                         logger.info("file successful got");
-                        send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE, ServerRespond.Results.SUCCESS));
-                        currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
+                        //send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE, ServerRespond.Results.SUCCESS));
+                        // currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
                         break;
                 }
         }
-        bb.release();
+       // bb.release();
     }
 
     // получение и составление дерева директорий в папке downloaded
