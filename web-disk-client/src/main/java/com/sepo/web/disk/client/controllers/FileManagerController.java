@@ -4,17 +4,18 @@ package com.sepo.web.disk.client.controllers;
 import com.sepo.web.disk.client.ClientApp;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
 import com.sepo.web.disk.client.network.Network;
-import com.sepo.web.disk.common.models.ClientRequest;
-import com.sepo.web.disk.common.models.ClientState;
+import com.sepo.web.disk.common.models.ClientEnum;
+import com.sepo.web.disk.common.models.Folder;
 import com.sepo.web.disk.common.models.FileInfo;
-import com.sepo.web.disk.common.models.ServerRespond;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.TransferMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,26 +26,45 @@ import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 
 
 public class FileManagerController implements Initializable, OnActionCallback {
-    private String clientFolderName = "downloaded";
-    private String userEmail = "";
-    private TreeItem<FileInfo> serverRoot;
-    private ArrayList<FileInfo> serverFiles = new ArrayList<>();
+    @FXML
+    private Button clientRefreshBtn;
+    @FXML
+    private Button clientDownToServerBtn;
+    @FXML
+    private Button clientDeleteBtn;
+    @FXML
+    private Button clientMoveBtn;
+    @FXML
+    private Button clientAcceptBtn;
+    @FXML
+    private Button clientCancelBtn;
+    @FXML
+    private Button serverRefreshBtn;
+    @FXML
+    private Button serverDownFromServerBtn;
+    @FXML
+    private Button serverDeleteBtn;
+    @FXML
+    private Button serverMoveBtn;
+    @FXML
+    private Button serverAcceptBtn;
+    @FXML
+    private Button serverCancelBtn;
 
-    private String userServerFolderName;
-    private OnActionCallback networkCallback;
+    private final String clientFolderName = "downloaded";
+    private OnActionCallback mainCallback;
+    private Folder serverFolder;
 
     private static final Logger logger = LogManager.getLogger(FileManagerController.class);
     @FXML
-    private TreeView<FileInfo> serverStorageTView;
+    private TreeView<FileInfo> serverFilesTView;
 
     @FXML
-    private TreeView<FileInfo> clientDownloadedFilesTView;
+    private TreeView<FileInfo> clientFilesTView;
     @FXML
     private ListView<FileInfo> clientTransferFilesLView;
 
@@ -67,63 +87,100 @@ public class FileManagerController implements Initializable, OnActionCallback {
 
     public void clientDragDroppedAction(DragEvent dragEvent) throws IOException {
         File file = dragEvent.getDragboard().getFiles().get(0);
-        clientFiles.add(new FileInfo().setFileFullName(file.getName()).setFilePath(file.getAbsolutePath()).setFileSize(Files.size(file.toPath())));
+        clientFiles.add(new FileInfo(file.toPath()));
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        Network.getInstance().getNetworkHandler().setOtherCallback(this);
-        userServerFolderName = SignInController.currUser.getEmail();
+        Network.mainHandler.setOtherCallback(this);
+        initButtons();
         initClientTransferFilesLView();
+        refreshClientFilesTView();
+        initTreeViews();
+        logger.info("send initialize request");
+        mainCallback.callback(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        mainCallback.callback(ClientEnum.Request.REFRESH);
+    }
+
+    private void initButtons() {
+        setBtnIcon("refresh", clientRefreshBtn);
+        setBtnIcon("downToServer", clientDownToServerBtn);
+        setBtnIcon("delete", clientDeleteBtn);
+        setBtnIcon("move", clientMoveBtn);
+        setBtnIcon("accept", clientAcceptBtn);
+        setBtnIcon("cancel", clientCancelBtn);
+        setBtnIcon("refresh", serverRefreshBtn);
+        setBtnIcon("downFromServer", serverDownFromServerBtn);
+        setBtnIcon("delete", serverDeleteBtn);
+        setBtnIcon("move", serverMoveBtn);
+        setBtnIcon("accept", serverAcceptBtn);
+        setBtnIcon("cancel", serverCancelBtn);
+    }
+
+    private void setBtnIcon(String iconName, Button btn) {
+        var icon = new ImageView(new Image(ClientApp.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png")));
+        icon.setFitWidth(20);
+        icon.setFitHeight(20);
+        btn.setGraphic(icon);
+    }
+
+
+    private void refreshClientFilesTView() {
+        clientFilesTView.refresh();
+        var root = new TreeItem<FileInfo>();
+        root.setExpanded(true);
+        clientFilesTView.setRoot(root);
         try {
-            var root = new TreeItem<FileInfo>();
-            root.setExpanded(true);
-            clientDownloadedFilesTView.setRoot(root);
-            serverStorageTView.setRoot(serverRoot);
-            initClientDownloadedFilesTView(Path.of(clientFolderName), root);
-            initTreeViews();
+            setClientFiles(Path.of(clientFolderName), root);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        //TODO: Разобраться с java.io.EOFException
-//        networkCallback.callback(ClientState.State.UPDATE, ClientState.Wait.RESPOND);
-//        networkCallback.callback(new ClientRequest(ClientRequest.Requests.UPDATE));
-
-
     }
 
-    // получение и составление дерева директорий в папке downloaded
-    private void initClientDownloadedFilesTView(Path path, TreeItem<FileInfo> root) throws IOException {
+    private void setClientFiles(Path path, TreeItem<FileInfo> root) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (var p : stream) {
                 var isDirectory = Files.isDirectory(p);
                 var fileInfo = new FileInfo(p);
                 var treeItem = new TreeItem<>(fileInfo);
-                var icon = new ImageView(fileInfo.getIcon());
-                icon.setFitWidth(17);
-                icon.setFitHeight(17);
-                treeItem.setGraphic(icon);
+                treeItem.setGraphic(getIcon(fileInfo));
                 root.getChildren().add(treeItem);
                 if (isDirectory) {
-                    initClientDownloadedFilesTView(p, treeItem);
+                    setClientFiles(p, treeItem);
                 }
             }
         }
     }
 
-    private void updateServerFiles(ArrayList<FileInfo> files, TreeItem<FileInfo> root) {
-        var _root = root;
 
-        for (var file : files) {
-            var treeItem = new TreeItem<>(file);
-            var icon = new ImageView(file.getIcon());
-            icon.setFitWidth(17);
-            icon.setFitHeight(17);
-            treeItem.setGraphic(icon);
-            _root.getChildren().add(treeItem);
-            if (file.isFolder()) _root = treeItem;
+    private void refreshServerFilesTView() {
+        serverFilesTView.refresh();
+        var serverRoot = new TreeItem<FileInfo>();
+        serverRoot.setExpanded(true);
+        serverFilesTView.setRoot(serverRoot);
+        setServerFiles(serverFolder, serverRoot);
+    }
+
+    private void setServerFiles(Folder rootFolder, TreeItem<FileInfo> root) {
+        for (var folder : rootFolder.getFolders()) {
+            var rootItem = new TreeItem<>(folder.getFileInfo());
+            rootItem.setGraphic(getIcon(folder.getFileInfo()));
+            root.getChildren().add(rootItem);
+            setServerFiles(folder, rootItem);
+
+            for (var file : folder.getFiles()) {
+                var treeItem = new TreeItem<>(file);
+                treeItem.setGraphic(getIcon(file));
+                rootItem.getChildren().add(treeItem);
+            }
         }
+    }
+
+    private ImageView getIcon(FileInfo fileInfo) {
+        var icon = new ImageView(fileInfo.getIcon());
+        icon.setFitWidth(17);
+        icon.setFitHeight(17);
+        return icon;
     }
 
     private void initClientTransferFilesLView() {
@@ -132,31 +189,38 @@ public class FileManagerController implements Initializable, OnActionCallback {
     }
 
     private void initTreeViews() {
-        clientDownloadedFilesTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        serverStorageTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        clientFilesTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        serverFilesTView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
 
     @Override
     public void setOtherCallback(OnActionCallback callback) {
-        this.networkCallback = callback;
+        logger.info("get callback");
+        this.mainCallback = callback;
     }
 
     @Override
     public void callback(Object... args) {
         if (args.length == 1) {
-            if (args[0] instanceof ServerRespond) {
-                if (((ServerRespond) args[0]).getCurrResult() == ServerRespond.Results.SUCCESS) {
-                    updateServerFiles(serverFiles, serverRoot);
-                }
+            if (args[0] instanceof Folder) {
+                serverFolder = (Folder) args[0];
+                refreshServerFilesTView();
             }
         }
-        if (args.length == 2) {
-            if (args[0] == null && args[1] instanceof FileInfo) {
-                var file = (FileInfo) args[1];
-                serverFiles.add(file);
-            }
-        }
+//        if (args.length == 1) {
+//            if (args[0] instanceof ServerRespond) {
+//                if (((ServerRespond) args[0]).getCurrResult() == ServerRespond.Results.SUCCESS) {
+//                    updateServerFiles(serverFiles, serverRoot);
+//                }
+//            }
+//        }
+//        if (args.length == 2) {
+//            if (args[0] == null && args[1] instanceof FileInfo) {
+//                var file = (FileInfo) args[1];
+//                serverFiles.add(file);
+//            }
+//        }
     }
 
     @FXML
@@ -170,9 +234,9 @@ public class FileManagerController implements Initializable, OnActionCallback {
     public void clientTViewDragDroppedAction(DragEvent dragEvent) {
         File file = dragEvent.getDragboard().getFiles().get(0);
         var fileInfo = new FileInfo(file.toPath());
-        clientDownloadedFilesTView.getRoot().getChildren().add(new TreeItem<>(fileInfo));
+        clientFilesTView.getRoot().getChildren().add(new TreeItem<>(fileInfo));
         try {
-            Files.copy(file.toPath(),Path.of(clientFolderName).resolve(file.getName()));
+            Files.copy(file.toPath(), Path.of(clientFolderName).resolve(file.getName()));
             ClientApp.setScene("fileManager");
         } catch (IOException e) {
             e.printStackTrace();
@@ -191,6 +255,10 @@ public class FileManagerController implements Initializable, OnActionCallback {
     public void serverTViewDragDroppedAction(DragEvent dragEvent) {
         File file = dragEvent.getDragboard().getFiles().get(0);
         var fileInfo = new FileInfo(file.toPath());
-        networkCallback.callback(fileInfo);
+        mainCallback.callback(fileInfo);
+    }
+
+    public void serverTViewMouseDragOverAction(MouseDragEvent mouseDragEvent) {
+        mouseDragEvent.copyFor(mouseDragEvent.getGestureSource(), mouseDragEvent.getTarget());
     }
 }

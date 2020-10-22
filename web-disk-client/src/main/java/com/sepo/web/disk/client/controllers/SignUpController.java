@@ -3,9 +3,8 @@ package com.sepo.web.disk.client.controllers;
 import com.sepo.web.disk.client.ClientApp;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
 import com.sepo.web.disk.client.network.Network;
-import com.sepo.web.disk.common.models.ClientRequest;
-import com.sepo.web.disk.common.models.ClientState;
-import com.sepo.web.disk.common.models.ServerRespond;
+import com.sepo.web.disk.common.models.ClientEnum;
+import com.sepo.web.disk.common.models.ServerEnum;
 import com.sepo.web.disk.common.models.User;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -56,9 +55,8 @@ public class SignUpController implements Initializable, OnActionCallback {
             return;
         }
 
-        networkCallback.callback(ClientState.State.REG, ClientState.Wait.RESPOND);
-        newUser = new User(sighUpEmailTField.getText(), signUpPassPField.getText());
-        networkCallback.callback(new ClientRequest(ClientRequest.Requests.REG));
+        networkCallback.callback(ClientEnum.State.REG, ClientEnum.StateWaiting.RESULT);
+        networkCallback.callback(new User(sighUpEmailTField.getText(), signUpPassPField.getText()));
     }
 
     @Override
@@ -69,34 +67,22 @@ public class SignUpController implements Initializable, OnActionCallback {
     @Override
     public void callback(Object... args) {
         if (args.length == 1) {
-            if (args[0] instanceof ServerRespond) {
-                var resp = (ServerRespond) args[0];
-                switch (resp.getCurrRespond()) {
-                    case REG:
-                        switch (resp.getCurrResult()) {
-                            case PROCESSING:
-                                networkCallback.callback(newUser);
-                                break;
-                            case SUCCESS:
-                                Platform.runLater(() -> {
-                                    if (errorLbl.isVisible()) {
-                                        errorLbl.setVisible(false);
-                                    }
-                                    successLbl.setVisible(true);
-                                    successLbl.setText("Registration is done. Please sign in.");
-                                });
-                                break;
-                            case FAILURE:
-                                Platform.runLater(() -> {
-                                    if (successLbl.isVisible()) {
-                                        successLbl.setVisible(false);
-                                    }
-                                    errorLbl.setVisible(true);
-                                    errorLbl.setText("Registration error. Try another email.");
-                                });
-                                break;
-                        }
-                        break;
+            if (args[0] instanceof ServerEnum.Respond) {
+                var resp = (ServerEnum.Respond) args[0];
+                if (resp == ServerEnum.Respond.SUCCESS) {
+                    Platform.runLater(() -> {
+                        if (errorLbl.isVisible()) errorLbl.setVisible(false);
+
+                        successLbl.setVisible(true);
+                        successLbl.setText("Registration is done. Please sign in.");
+                    });
+                } else {
+                    Platform.runLater(() -> {
+                        if (successLbl.isVisible()) successLbl.setVisible(false);
+
+                        errorLbl.setVisible(true);
+                        errorLbl.setText("Registration error. Try another email.");
+                    });
                 }
             }
         }
@@ -104,7 +90,7 @@ public class SignUpController implements Initializable, OnActionCallback {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        Network.getInstance().getNetworkHandler().setOtherCallback(this);
+        Network.authHandler.setOtherCallback(this);
     }
 
 

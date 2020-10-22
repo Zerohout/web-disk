@@ -1,12 +1,15 @@
 package com.sepo.web.disk.client;
 
 import com.sepo.web.disk.client.network.Network;
+import com.sepo.web.disk.common.models.ClientEnum;
+import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
@@ -15,7 +18,7 @@ import java.io.IOException;
  * JavaFX App
  */
 public class ClientApp extends Application {
-
+    private static final Logger logger = LogManager.getLogger(ClientApp.class);
     private static Scene scene;
     private static Stage stage;
 
@@ -25,15 +28,13 @@ public class ClientApp extends Application {
         scene = new Scene(loadFXML("signIn"));
         stage.setScene(scene);
         stage.show();
-
     }
 
     @Override
     public void stop() throws Exception {
         super.stop();
-        if(Network.getInstance().getCurrentChannel().isActive()) {
-            Network.getInstance().stop();
-        }
+        Network.getInstance().stop();
+
     }
 
     public static void setRoot(String fxml) throws IOException {
@@ -55,7 +56,6 @@ public class ClientApp extends Application {
         launch();
 
     }
-
 
 
 }

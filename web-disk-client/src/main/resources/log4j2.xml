@@ -53,7 +53,7 @@
 <!--        &lt;!&ndash;endregion&ndash;&gt;-->
 
         <Console name="STDOUT">
-            <Layout type="PatternLayout" pattern="%d %m %n" />
+            <Layout type="PatternLayout" pattern="%c{1} %d{HH:mm:ss,SSS} %m %n" />
         </Console>
     </Appenders>
 
@@ -62,18 +62,18 @@
             <AppenderRef ref="STDOUT" />
 <!--            <AppenderRef ref="rollingFile" />-->
         </Root>
-        <Logger name="com.sepo.web.disk.client.controllers.FileManagerController">
-<!--            <AppenderRef ref="STDOUT"/>-->
-        </Logger>
-        <Logger name="com.sepo.web.disk.client.controllers.SignInController">
-<!--            <AppenderRef ref="STDOUT"/>-->
-        </Logger>
-        <Logger name="com.sepo.web.disk.client.controllers.SignUpController">
-<!--            <AppenderRef ref="STDOUT"/>-->
-        </Logger>
-        <Logger name="com.sepo.web.disk.client.handlers.NetworkHandler">
-<!--            <AppenderRef ref="STDOUT"/>-->
-        </Logger>
+<!--        <Logger name="com.sepo.web.disk.client.controllers.FileManagerController">-->
+<!--&lt;!&ndash;            <AppenderRef ref="STDOUT"/>&ndash;&gt;-->
+<!--        </Logger>-->
+<!--        <Logger name="com.sepo.web.disk.client.controllers.SignInController">-->
+<!--&lt;!&ndash;            <AppenderRef ref="STDOUT"/>&ndash;&gt;-->
+<!--        </Logger>-->
+<!--        <Logger name="com.sepo.web.disk.client.controllers.SignUpController">-->
+<!--&lt;!&ndash;            <AppenderRef ref="STDOUT"/>&ndash;&gt;-->
+<!--        </Logger>-->
+<!--        <Logger name="com.sepo.web.disk.client.handlers.AuthHandler">-->
+<!--&lt;!&ndash;            <AppenderRef ref="STDOUT"/>&ndash;&gt;-->
+<!--        </Logger>-->
     </Loggers>
 
 </Configuration>
