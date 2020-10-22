@@ -7,8 +7,10 @@ import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.models.Folder;
 import com.sepo.web.disk.common.models.FileInfo;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -16,6 +18,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseDragEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,6 +120,7 @@ public class FileManagerController implements Initializable, OnActionCallback {
         setBtnIcon("cancel", serverCancelBtn);
     }
 
+
     private void setBtnIcon(String iconName, Button btn) {
         var icon = new ImageView(new Image(ClientApp.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png")));
         icon.setFitWidth(20);
@@ -167,12 +171,11 @@ public class FileManagerController implements Initializable, OnActionCallback {
             rootItem.setGraphic(getIcon(folder.getFileInfo()));
             root.getChildren().add(rootItem);
             setServerFiles(folder, rootItem);
-
-            for (var file : folder.getFiles()) {
-                var treeItem = new TreeItem<>(file);
-                treeItem.setGraphic(getIcon(file));
-                rootItem.getChildren().add(treeItem);
-            }
+        }
+        for (var file : rootFolder.getFiles()) {
+            var treeItem = new TreeItem<>(file);
+            treeItem.setGraphic(getIcon(file));
+            root.getChildren().add(treeItem);
         }
     }
 
@@ -205,22 +208,10 @@ public class FileManagerController implements Initializable, OnActionCallback {
         if (args.length == 1) {
             if (args[0] instanceof Folder) {
                 serverFolder = (Folder) args[0];
-                refreshServerFilesTView();
+                Platform.runLater(this::refreshServerFilesTView);
+
             }
         }
-//        if (args.length == 1) {
-//            if (args[0] instanceof ServerRespond) {
-//                if (((ServerRespond) args[0]).getCurrResult() == ServerRespond.Results.SUCCESS) {
-//                    updateServerFiles(serverFiles, serverRoot);
-//                }
-//            }
-//        }
-//        if (args.length == 2) {
-//            if (args[0] == null && args[1] instanceof FileInfo) {
-//                var file = (FileInfo) args[1];
-//                serverFiles.add(file);
-//            }
-//        }
     }
 
     @FXML
@@ -260,5 +251,42 @@ public class FileManagerController implements Initializable, OnActionCallback {
 
     public void serverTViewMouseDragOverAction(MouseDragEvent mouseDragEvent) {
         mouseDragEvent.copyFor(mouseDragEvent.getGestureSource(), mouseDragEvent.getTarget());
+    }
+
+    public void clientFilesTViewClickAction(MouseEvent mouseEvent) {
+        if (clientFilesTView.getSelectionModel().getSelectedItems().size() > 0) {
+            if (mouseEvent.getClickCount() == 1) {
+                clientCancelBtn.setDisable(false);
+            }
+
+        }
+    }
+
+    public void clientCancelBtnAction(ActionEvent actionEvent) {
+        ((Button) actionEvent.getSource()).setDisable(true);
+        clientFilesTView.getSelectionModel().clearSelection();
+    }
+
+    public void clientRefreshBtnAction(ActionEvent actionEvent) {
+        refreshClientFilesTView();
+    }
+
+    public void serverFilesTViewClickAction(MouseEvent mouseEvent) {
+        if (serverFilesTView.getSelectionModel().getSelectedItems().size() > 0) {
+            if (mouseEvent.getClickCount() == 1) {
+                serverCancelBtn.setDisable(false);
+            }
+
+        }
+    }
+
+    public void serverCancelBtnAction(ActionEvent actionEvent) {
+        ((Button) actionEvent.getSource()).setDisable(true);
+        serverFilesTView.getSelectionModel().clearSelection();
+    }
+
+    public void serverRefreshBtnAction(ActionEvent actionEvent) {
+        mainCallback.callback(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        mainCallback.callback(ClientEnum.Request.REFRESH);
     }
 }

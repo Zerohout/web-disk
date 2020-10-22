@@ -28,12 +28,14 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     private void refreshing(ByteBuf bb) {
         if (currentStateWaiting == ClientEnum.StateWaiting.TRANSFER){
+            logger.info("заливаем в аккум");
             if(bb.readableBytes() > 0) accumulator.writeBytes(bb);
             bb.release();
         }
         if(currentStateWaiting == ClientEnum.StateWaiting.COMPLETING){
+            logger.info("завершаем операцию");
             var folder = (Folder)ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-            accumulator.release();
+            accumulator.retain().release();
             currentState = ClientEnum.State.IDLE;
             currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
             callback.callback(folder);
@@ -42,6 +44,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        logger.info("got message");
         if (currentState == ClientEnum.State.REFRESHING) {
             refreshing((ByteBuf) msg);
         }
@@ -49,6 +52,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        logger.info("got message complete");
         if(currentState == ClientEnum.State.REFRESHING){
             currentStateWaiting = ClientEnum.StateWaiting.COMPLETING;
             refreshing(null);

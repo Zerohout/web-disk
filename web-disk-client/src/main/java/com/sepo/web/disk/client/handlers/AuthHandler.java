@@ -15,11 +15,10 @@ import static com.sepo.web.disk.common.service.ObjectEncoderDecoder.*;
 public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActionCallback {
     private static final Logger logger = LogManager.getLogger(AuthHandler.class);
     private ChannelHandlerContext ctx;
+    private OnActionCallback otherCallback;
     private ClientEnum.State currentState = ClientEnum.State.IDLE;
     private ClientEnum.StateWaiting currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
-    private OnActionCallback otherCallback;
     private ServerEnum.Respond operationResult;
-    private Folder folder;
     private ByteBuf accumulator;
 
     public AuthHandler() {
@@ -40,6 +39,9 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     }
 
+    //region ChannelInboundHandlerAdapter methods
+
+    //endregion
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {

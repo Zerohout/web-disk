@@ -22,9 +22,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private ServerEnum.StateWaiting currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
     private ClientEnum.Request request;
     private ClientEnum.RequestType requestType;
-    private ArrayList<FileInfo> fileInfoList = new ArrayList<>();
-    private int currFileInfoIndex = 0;
-    private FileInfo currFileInfo;
     ChannelHandlerContext ctx;
     Path userFilesPath;
 
@@ -58,7 +55,8 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         var dir = new Folder(new FileInfo(userFilesPath));
         MainHelper.createFileTree(userFilesPath, dir);
         var dirBytes = ObjectEncoderDecoder.convertObjectToByteArray(dir);
-        ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes));
+        var bb = ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes);
+        ctx.writeAndFlush(bb);
     }
 
     @Override
@@ -67,13 +65,13 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         if (currentState == ServerEnum.State.IDLE) {
             var bb = (ByteBuf) msg;
             logger.info("get request");
-
             request = ClientEnum.getRequestByValue(bb.readByte());
+
             if (request == ClientEnum.Request.REFRESH) {
+                bb.release();
                 refresh();
                 currentState = ServerEnum.State.IDLE;
                 currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
-
             }
 
         }
@@ -153,30 +151,11 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         // bb.release();
     }
 
-    // получение и составление дерева директорий в папке downloaded
-    private void getFileList(Path path) throws IOException {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            stream.forEach(p -> {
-                fileInfoList.add(new FileInfo(p));
-                try {
-                    if (Files.isDirectory(p)) getFileList(p);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-    }
-
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
         ctx.close();
     }
-
-    private void send(ChannelHandlerContext ctx, Sendable obj) {
-        ctx.writeAndFlush(ObjectEncoderDecoder.EncodeObjToByteBuf(obj));
-    }
-
 
 }
 

@@ -20,6 +20,8 @@ public class ObjectOutHandler extends ChannelOutboundHandlerAdapter implements O
        logger.info("flush");
     }
 
+
+
     @Override
     public void setOtherCallback(OnActionCallback callback) {
         callback.setOtherCallback(this);
