@@ -20,23 +20,15 @@
             <artifactId>commons-io</artifactId>
             <version>2.6</version>
         </dependency>
-    </dependencies>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-    </properties>
-    <artifactId>web-disk-common</artifactId>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.sepo.web.disk</groupId>
-                <artifactId>web-disk-client</artifactId>
-                <version>0.0.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+<!--        <dependency>-->
+<!--            <groupId>javax.xml.bind</groupId>-->
+<!--            <artifactId>jaxb-api</artifactId>-->
+<!--            <version>2.3.0</version>-->
+<!--        </dependency>-->
 
+    </dependencies>
+
+    <artifactId>web-disk-common</artifactId>
 
 
 </project>

@@ -7,25 +7,30 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class FileInfo implements Sendable {
-    private static final long serialVersionUID = 2L;
-    private String fileFullName;
-    private String filePath;
-    private long fileSize;
+    private static final long serialVersionUID = 1451611233309709951L;
+    private String name;
+    private String absolutePath;
+    private long size;
     private boolean isFolder;
     private transient Image icon;
     private transient Path path;
 
+
+
+    private FileInfo newValue;
+
     public FileInfo(Path path) {
         try {
             var file = new File(path.toUri());
-            this.fileFullName = file.getName();
-            this.filePath = file.getAbsolutePath();
-            this.fileSize = Files.size(path);
-            isFolder = Files.isDirectory(path);
-            setIcon(path);
+            this.name = file.getName();
+            this.absolutePath = file.getAbsolutePath();
+            this.size = Files.size(path);
+            this.isFolder = Files.isDirectory(path);
             this.path = path;
+            setIcon(this.absolutePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -35,50 +40,28 @@ public class FileInfo implements Sendable {
 
     }
 
-    public FileInfo setFileFullName(String fileFullName) {
-        this.fileFullName = fileFullName;
-        return this;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public FileInfo setFilePath(String filePath) {
-        this.filePath = filePath;
-        return this;
+    private void setIcon(String absolutePath) {
+        this.icon = FileInfoHelper.setFileInfoIcon(absolutePath);
     }
 
-    public FileInfo setFileSize(long fileSize) {
-        this.fileSize = fileSize;
-        return this;
+    public String getAbsolutePath() {
+        return this.absolutePath;
     }
 
-    public FileInfo isFolder(boolean isFolder) {
-        this.isFolder = isFolder;
-        return this;
-    }
-
-    public FileInfo setIcon(Image icon) {
-        this.icon = icon;
-        return this;
-    }
-
-    public FileInfo setIcon(Path path) {
-        this.icon = FileInfoHelper.setFileInfoIcon(path);
-        return this;
-    }
-
-    public String getFilePath() {
-        return this.filePath;
-    }
-
-    public long getFileSize() {
-        return this.fileSize;
+    public long getSize() {
+        return this.size;
     }
 
     public Path getPath() {
         return this.path;
     }
 
-    public String getFileFullName() {
-        return this.fileFullName;
+    public String getName() {
+        return this.name;
     }
 
     public boolean isFolder() {
@@ -88,15 +71,24 @@ public class FileInfo implements Sendable {
 
     public Image getIcon() {
         if (icon == null) {
-            setIcon(this.path);
+            setIcon(this.absolutePath);
         }
         return this.icon;
     }
 
+    public FileInfo getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(FileInfo newValue) {
+        this.newValue = newValue;
+    }
+
     @Override
     public String toString() {
-        return this.fileFullName;
+        return this.name;
     }
 
 
 }
+

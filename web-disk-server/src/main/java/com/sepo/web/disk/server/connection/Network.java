@@ -1,6 +1,6 @@
 package com.sepo.web.disk.server.connection;
 
-import com.sepo.web.disk.server.handlers.MainHandler;
+import com.sepo.web.disk.server.handlers.AuthHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -13,7 +13,7 @@ import java.nio.file.Path;
 
 public class Network {
 
-    public static String serverStorageName = "serverStorage";
+    public static String SERVER_STORAGE_NAME = "serverStorage";
     private static Network ourInstance = new Network();
 
     public static Network getInstance() {
@@ -22,18 +22,12 @@ public class Network {
 
     private Network() {
         try {
-            if (Files.notExists(Path.of(serverStorageName))) {
-                Files.createDirectory(Path.of(serverStorageName));
+            if (Files.notExists(Path.of(SERVER_STORAGE_NAME))) {
+                Files.createDirectory(Path.of(SERVER_STORAGE_NAME));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private SocketChannel currentChannel;
-
-    public Channel getCurrentChannel() {
-        return currentChannel;
     }
 
     public void start() {
@@ -46,8 +40,7 @@ public class Network {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new MainHandler());
-                            currentChannel = ch;
+                            ch.pipeline().addLast(new AuthHandler());
                         }
                     });
             ChannelFuture chFuture = sb.bind(8189).sync();
@@ -60,7 +53,4 @@ public class Network {
         }
     }
 
-    public void stop() {
-        currentChannel.close();
-    }
 }

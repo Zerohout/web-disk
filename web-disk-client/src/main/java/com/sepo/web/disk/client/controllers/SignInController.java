@@ -39,7 +39,8 @@ public class SignInController implements Initializable, OnActionCallback {
 
     private static final Logger logger = LogManager.getLogger(SignInController.class);
 
-    private OnActionCallback networkCallback;
+
+    private OnActionCallback otherCallback;
 
     //TODO: переместить соединение с сервером, т.к. идет reconnect при переходе на данную сцену
     @Override
@@ -52,8 +53,6 @@ public class SignInController implements Initializable, OnActionCallback {
 
     @FXML
     private void signUpAction(ActionEvent actionEvent) throws IOException {
-        networkCallback.callback(ClientState.State.STATE, ClientState.Wait.RESULT);
-        networkCallback.callback(new ClientRequest(ClientRequest.Requests.STATE));
         ClientApp.setScene("signUp");
     }
 
@@ -63,15 +62,14 @@ public class SignInController implements Initializable, OnActionCallback {
             return;
         }
 
+
         ControlPropertiesHelper.setPassControlsProp(signInPassTField, signInPassPField, signInShowPassBtn);
     }
 
     @FXML
     public void signInAction(ActionEvent actionEvent) {
-        networkCallback.callback(ClientState.State.AUTH, ClientState.Wait.RESPOND);
-        currUser = new User(signInEmailTField.getText(), signInPassPField.getText());
-        logger.info("Send AUTH request");
-        networkCallback.callback(new ClientRequest(ClientRequest.Requests.AUTH));
+        otherCallback.callback(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
+        otherCallback.callback(new User(signInEmailTField.getText(), signInPassPField.getText()));
     }
 
     public void passPFieldAction(KeyEvent keyEvent) {
@@ -93,20 +91,19 @@ public class SignInController implements Initializable, OnActionCallback {
         var connection = new Thread(this::connectToServer);
         connection.setDaemon(true);
         Platform.runLater(connection::start);
-        Network.getInstance().getNetworkHandler().setOtherCallback(this);
+        Network.authHandler.setOtherCallback(this);
     }
 
     private void connectToServer() {
         try {
             CountDownLatch networkStarter = new CountDownLatch(1);
-            Network.getInstance().setNetworkHandler();
-            Network.getInstance().getNetworkHandler().setOtherCallback(this);
-            new Thread(() -> Network.getInstance().start(networkStarter)).start();
+            CountDownLatch handlerStarter = new CountDownLatch(1);
+            new Thread(() -> Network.getInstance().start(networkStarter, handlerStarter)).start();
+            handlerStarter.await();
+            Network.authHandler.setOtherCallback(this);
             networkStarter.await();
-
         } catch (InterruptedException ex) {
             ex.printStackTrace();
-            Network.getInstance().stop();
         }
     }
 
@@ -114,36 +111,27 @@ public class SignInController implements Initializable, OnActionCallback {
     @Override
     public void callback(Object... args) {
         if (args.length == 1) {
-            if (args[0] instanceof ServerRespond) {
-                var resp = (ServerRespond) args[0];
-                switch (resp.getCurrRespond()) {
-                    case AUTH:
-                        switch (resp.getCurrResult()) {
-                            case PROCESSING:
-                                logger.info("send User");
-                                networkCallback.callback(currUser);
-                                break;
-                            case SUCCESS:
-                                Platform.runLater(() -> {
-                                    try {
-                                        ControlPropertiesHelper.userEmail = currUser.getEmail();
-                                        ClientApp.setScene("fileManager");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                });
-                                break;
-                            case FAILURE:
-                                Platform.runLater(() -> {
-                                    signInErrorLbl.setText("Error login or password.");
-                                    signInErrorLbl.setVisible(true);
-                                });
-                                break;
+            if (args[0] instanceof ServerEnum.Respond) {
+                var resp = (ServerEnum.Respond) args[0];
+                if (resp == ServerEnum.Respond.SUCCESS) {
+                    Platform.runLater(() -> {
+                        try {
+                            logger.info("set scene to fileManager");
+                            ClientApp.setScene("fileManager");
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        break;
+                    });
+                } else {
+                    logger.info("set error msg to UI");
+                    Platform.runLater(() -> {
+                        signInErrorLbl.setText("Error login or password.");
+                        signInErrorLbl.setVisible(true);
+                    });
                 }
             }
-        } else if (args.length == 3) {
+        }if(args.length == 3){
             Platform.runLater(() -> {
                 signInErrorLbl.setText((String) args[0]);
                 signInErrorLbl.setVisible((Boolean) args[1]);
@@ -155,7 +143,7 @@ public class SignInController implements Initializable, OnActionCallback {
 
     @Override
     public void setOtherCallback(OnActionCallback callback) {
-        this.networkCallback = callback;
+        otherCallback = callback;
     }
 
 }

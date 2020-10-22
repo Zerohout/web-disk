@@ -8,6 +8,13 @@
     <artifactId>web-disk</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <modules>
         <module>web-disk-client</module>
         <module>web-disk-server</module>

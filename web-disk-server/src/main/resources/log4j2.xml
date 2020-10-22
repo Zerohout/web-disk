@@ -5,7 +5,7 @@
 
     <Appenders>
         <Console name="STDOUT">
-            <Layout type="PatternLayout" pattern="%d %m %n" />
+            <Layout type="PatternLayout" pattern="%c{1} %d{HH:mm:ss,SSS} %m %n" />
         </Console>
     </Appenders>
 

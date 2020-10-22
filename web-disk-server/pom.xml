@@ -10,17 +10,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>web-disk-server</artifactId>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-    </properties>
+
 
     <dependencies>
         <dependency>
             <groupId>com.sepo.web.disk</groupId>
             <artifactId>web-disk-common</artifactId>
             <version>0.0.1</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
