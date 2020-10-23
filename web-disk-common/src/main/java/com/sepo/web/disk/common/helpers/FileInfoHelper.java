@@ -187,6 +187,6 @@ public class FileInfoHelper {
                     break;
             }
         }
-        return new Image(FileInfo.class.getResourceAsStream("/icons/" + iconName + ".png"));
+        return new Image(FileInfo.class.getResourceAsStream("/icons/" + iconName + ".png"), 17, 17, true, true);
     }
 }

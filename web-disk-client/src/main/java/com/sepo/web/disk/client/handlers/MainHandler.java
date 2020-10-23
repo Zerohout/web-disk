@@ -3,6 +3,7 @@ package com.sepo.web.disk.client.handlers;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
+import com.sepo.web.disk.common.models.FileInfo;
 import com.sepo.web.disk.common.models.Folder;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
@@ -10,6 +11,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.util.ArrayList;
 
 public class MainHandler extends ChannelInboundHandlerAdapter implements OnActionCallback {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
@@ -85,6 +89,13 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
                 logger.info("getting change state callback");
                 currentState = (ClientEnum.State) args[0];
                 currentStateWaiting = (ClientEnum.StateWaiting) args[1];
+            }
+            logger.info(args[0].getClass());
+            logger.info(args[1].getClass());
+
+            if(args[0] instanceof ArrayList){
+                var filesInfo = new ArrayList<>((ArrayList<FileInfo>)args[0]);
+                var files = new ArrayList<>((ArrayList<File>)args[1]);
             }
         }
     }

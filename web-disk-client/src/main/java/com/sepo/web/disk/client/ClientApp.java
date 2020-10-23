@@ -57,5 +57,9 @@ public class ClientApp extends Application {
 
     }
 
+    public static Stage getStage(){
+        return stage;
+    }
+
 
 }

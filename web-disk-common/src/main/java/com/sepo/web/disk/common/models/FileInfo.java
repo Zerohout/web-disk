@@ -83,12 +83,5 @@ public class FileInfo implements Sendable {
     public void setNewValue(FileInfo newValue) {
         this.newValue = newValue;
     }
-
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
-
 }
 

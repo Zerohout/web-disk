@@ -6,6 +6,7 @@ module com.sepo.web.disk.web.disk.common {
 
     exports com.sepo.web.disk.common.models;
     exports com.sepo.web.disk.common.service;
+    exports com.sepo.web.disk.common.helpers;
 
 
 }
