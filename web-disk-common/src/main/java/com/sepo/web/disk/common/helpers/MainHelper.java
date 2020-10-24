@@ -9,14 +9,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class MainHelper {
-    public static void createFileTree(Path path, Folder mainFolder)  {
+    public static final String SERVER_FOLDER_NAME = "server_folder";
+
+    public static void createFileTree(Path path, Folder mainFolder, String folderName)  {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (var p : stream) {
                 var fileInfo = new FileInfo(p);
                 if (Files.isDirectory(p)) {
-                    var folder = new Folder(fileInfo);
+                    var folder = new Folder(fileInfo, folderName);
                     mainFolder.addFolders(folder);
-                    createFileTree(p, folder);
+                    createFileTree(p, folder, folderName);
                 }else{
                     mainFolder.addFiles(fileInfo);
                 }

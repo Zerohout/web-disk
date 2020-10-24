@@ -1,7 +1,7 @@
 package com.sepo.web.disk.client.handlers;
 
+import com.sepo.web.disk.client.Helpers.MainHelper;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
-import com.sepo.web.disk.client.controllers.FileManagerController;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.*;
 import io.netty.buffer.ByteBuf;
@@ -11,11 +11,9 @@ import org.apache.logging.log4j.Logger;
 
 import static com.sepo.web.disk.common.service.ObjectEncoderDecoder.*;
 
-@ChannelHandler.Sharable
-public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActionCallback {
+public class AuthHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(AuthHandler.class);
     private ChannelHandlerContext ctx;
-    private OnActionCallback otherCallback;
     private ClientEnum.State currentState = ClientEnum.State.IDLE;
     private ClientEnum.StateWaiting currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
     private ServerEnum.Respond operationResult;
@@ -28,9 +26,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     public void onErrorConnectionAction() {
         logger.info("Error connection");
-        if (otherCallback != null) {
-            otherCallback.callback("Can't connected to server. Please try again.", true, true);
-        }
+        MainHelper.setSignInErrorControls("Can't connected to server. Please try again.", true, true);
         ctx.close();
     }
 
@@ -38,10 +34,6 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
         logger.info("Successful connection");
 
     }
-
-    //region ChannelInboundHandlerAdapter methods
-
-    //endregion
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
@@ -60,9 +52,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("Channel Active");
         accumulator = ctx.alloc().buffer(1024 * 1024, 1024 * 1024 * 25);
-        if (otherCallback != null) {
-            otherCallback.callback("", false, false);
-        }
+        MainHelper.setSignInErrorControls("", false, false);
     }
 
     @Override
@@ -88,9 +78,10 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
             if (operationResult == ServerEnum.Respond.SUCCESS) {
                 ctx.pipeline().addLast(new MainHandler(ctx));
                 ctx.pipeline().remove(this);
+                Network.authHandler = null;
 
             }
-            otherCallback.callback(operationResult);
+            MainHelper.giveAuthResult(operationResult);
             resetStateToIDLE();
             return;
         }
@@ -104,7 +95,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
             bb.release();
         }
         if (currentStateWaiting == ClientEnum.StateWaiting.COMPLETING) {
-            otherCallback.callback(operationResult);
+            MainHelper.giveRegResult(operationResult);
             resetStateToIDLE();
         }
     }
@@ -112,7 +103,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
     private void resetStateToIDLE() {
         currentState = ClientEnum.State.IDLE;
         currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
-        accumulator.release();
+        accumulator.retain().release();
         operationResult = null;
     }
 
@@ -151,27 +142,6 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
 //                    send(new ClientRequest(ClientRequest.Request.CANCEL));
 //                }
 //                currentState.setCurrState(ClientState.State.IDLE).setCurrWait(ClientState.Wait.RESPOND);
-//                break;
-//            case UPDATE:
-//                if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) instanceof FileInfo) {
-//                    logger.info("get fileInfo");
-//                    otherCallback.callback(null, ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb));
-//                    send(new ClientRequest(ClientRequest.Request.UPDATE));
-//                    break;
-//                }
-//
-//                if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) == null) logger.info("object null");
-//
-//                if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) instanceof Sendable) {
-//                    respond = (ServerRespond) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
-//                    if (respond.getCurrResult() == ServerRespond.Results.SUCCESS) {
-//                        logger.info("Get UPDATE SUCCESS result");
-//                        currentState.setCurrState(ClientState.State.IDLE).setCurrWait(ClientState.Wait.RESPOND);
-//                        bb.release();
-//                        callback(respond);
-//                        return;
-//                    }
-//                }
 //                break;
 //            case SEND:
 //                if (ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb.copy()) instanceof ServerRespond) {
@@ -228,8 +198,13 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
 //        }
 //    }
 
-    public void send(Sendable obj) {
-        ctx.writeAndFlush(EncodeObjToByteBuf(obj));
+    public void sendRequest(ClientEnum.Request request, ClientEnum.RequestType requestType) {
+
+    }
+
+    public void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {
+        currentState = state;
+        currentStateWaiting = stateWaiting;
     }
 
     @Override
@@ -239,63 +214,14 @@ public class AuthHandler extends ChannelInboundHandlerAdapter implements OnActio
             currentStateWaiting = ClientEnum.StateWaiting.COMPLETING;
             auth(null);
         }
-
     }
 
-    @Override
-    public void callback(Object... args) {
-        if (args.length == 2) {
-            if (args[0] instanceof ClientEnum.State) {
-                logger.info("getting change state callback");
-                currentState = (ClientEnum.State) args[0];
-                currentStateWaiting = (ClientEnum.StateWaiting) args[1];
-            }
-            if (args[0] instanceof ClientEnum.Request) {
-                var req = (ClientEnum.Request) args[0];
-                if (args[1] instanceof ClientEnum.RequestType) {
-                    var reqType = (ClientEnum.RequestType) args[1];
-//                    if (req == ClientEnum.Request.GET && reqType == ClientEnum.RequestType.FILE_TREE) {
-//                        if (folder != null) {
-//                            logger.info("send folder callback");
-//                            otherCallback.callback(folder);
-//                            if (currentState != ClientEnum.State.IDLE) {
-//                                currentState = ClientEnum.State.IDLE;
-//                                currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
-//                            }
-//                            folder = null;
-//                            return;
-//                        }
-//                    }
-                }
-            }
-        }
-        if (args.length == 1) {
-            if (args[0] instanceof User) {
-                var reqArr = new byte[1];
-                reqArr[0] = currentState == ClientEnum.State.AUTH
-                        ? ClientEnum.Request.AUTH.getValue()
-                        : ClientEnum.Request.REG.getValue();
-                ctx.writeAndFlush(EncodeByteArraysToByteBuf(reqArr, convertObjectToByteArray(args[0])));
-            }
-
-        }
-//        if (args.length == 1) {
-//            if (args[0] instanceof Sendable) {
-//                if (args[0] instanceof FileInfo) {
-//                    currentState.setCurrState(ClientState.State.SEND).setCurrWait(ClientState.Wait.RESPOND);
-//                    send(new ClientRequest(ClientRequest.Request.SEND));
-//                    currFileInfo = (FileInfo) args[0];
-//                    return;
-//                }
-//                send((Sendable) args[0]);
-//            }
-    }
-
-
-    @Override
-    public void setOtherCallback(OnActionCallback otherCallback) {
-        this.otherCallback = otherCallback;
-        otherCallback.setOtherCallback(this);
+    public void sendUserData(User user) {
+        var reqArr = new byte[1];
+        reqArr[0] = currentState == ClientEnum.State.AUTH
+                ? ClientEnum.Request.AUTH.getValue()
+                : ClientEnum.Request.REG.getValue();
+        ctx.writeAndFlush(EncodeByteArraysToByteBuf(reqArr, convertObjectToByteArray(user)));
     }
 
     @Override

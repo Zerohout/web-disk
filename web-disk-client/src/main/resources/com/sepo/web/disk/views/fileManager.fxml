@@ -4,6 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import com.sepo.web.disk.client.controls.ClientFilesControl?>
+<?import com.sepo.web.disk.client.controls.ServerFilesControl?>
 <VBox prefHeight="600" prefWidth="600" spacing="10" stylesheets="@../styles/fileManagerStyles.css"
       xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.sepo.web.disk.client.controllers.FileManagerController">
@@ -21,89 +23,8 @@
     </MenuBar>
 
     <HBox alignment="CENTER" spacing="3" VBox.vgrow="ALWAYS">
-        <VBox alignment="CENTER" spacing="3" HBox.hgrow="ALWAYS">
-            <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-                <Label styleClass="field-description-label" text="Downloaded"/>
-                <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-                    <!--Client downloaded files-->
-                    <TreeView fx:id="clientFilesTView" maxHeight="Infinity" maxWidth="Infinity" editable="true"
-                              onDragDropped="#clientTViewDragDroppedAction" onDragOver="#clientTViewDragOverAction"
-                              prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
-                    onMouseClicked="#clientFilesTViewClickAction"/>
-                    <VBox spacing="5">
-                        <Button fx:id="clientRefreshBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#clientRefreshBtnAction"/>
-                        <Button fx:id="clientAddBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#clientAddBtnAction"/>
-                        <Button fx:id="clientDownToServerBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="clientDeleteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#clientDeleteBtnAction"/>
-                        <Button fx:id="clientMoveBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="clientAcceptBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="clientCancelBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#clientCancelBtnAction"/>
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                        </padding>
-                    </VBox>
-                </HBox>
-            </VBox>
-
-            <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-                <Label styleClass="field-description-label" text="File info"/>
-
-                <ListView fx:id="clientFileInfoLView" prefHeight="200.0" VBox.vgrow="ALWAYS">
-
-                </ListView>
-            </VBox>
-            <padding>
-                <Insets bottom="10" left="5" right="3" top="5"/>
-            </padding>
-        </VBox>
-
+        <ClientFilesControl/>
         <Separator orientation="VERTICAL"/>
-
-        <VBox alignment="CENTER" spacing="3" HBox.hgrow="ALWAYS">
-            <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-
-                <Label styleClass="field-description-label" text="Server storage"/>
-                <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-                    <!--Server storage-->
-                    <TreeView fx:id="serverFilesTView" maxWidth="Infinity" onDragDropped="#serverTViewDragDroppedAction"
-                              onDragOver="#serverTViewDragOverAction" onMouseDragOver="#serverTViewMouseDragOverAction"
-                              prefHeight="200.0" showRoot="false" VBox.vgrow="ALWAYS" onMouseClicked="#serverFilesTViewClickAction"/>
-                    <VBox spacing="5">
-                        <Button fx:id="serverRefreshBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#serverRefreshBtnAction"/>
-                        <Button fx:id="serverAddBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#serverAddBtnAction"/>
-                        <Button fx:id="serverDownFromServerBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="serverDeleteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="serverMoveBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="serverAcceptBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                        <Button fx:id="serverCancelBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                                VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#serverCancelBtnAction"/>
-                        <padding>
-                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                        </padding>
-                    </VBox>
-                </HBox>
-            </VBox>
-
-            <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-                <Label styleClass="field-description-label" text="File info"/>
-                <ListView prefHeight="200.0" VBox.vgrow="ALWAYS"/>
-            </VBox>
-            <padding>
-                <Insets bottom="10" left="3" right="5" top="5"/>
-            </padding>
-        </VBox>
+        <ServerFilesControl/>
     </HBox>
 </VBox>

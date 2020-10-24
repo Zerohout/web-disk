@@ -1,5 +1,6 @@
 package com.sepo.web.disk.client.handlers;
 
+import com.sepo.web.disk.client.Helpers.MainHelper;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
@@ -9,19 +10,20 @@ import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCounted;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
 
-public class MainHandler extends ChannelInboundHandlerAdapter implements OnActionCallback {
+public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
     private ClientEnum.State currentState = ClientEnum.State.IDLE;
     private ClientEnum.StateWaiting currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
     private ByteBuf accumulator;
     private ChannelHandlerContext ctx;
-    private OnActionCallback callback;
+//    private OnActionCallback callback;
 
     public MainHandler(ChannelHandlerContext ctx) {
         logger.info("mainHandler created");
@@ -31,19 +33,24 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
     }
 
     private void refreshing(ByteBuf bb) {
-        if (currentStateWaiting == ClientEnum.StateWaiting.TRANSFER){
+        if (currentStateWaiting == ClientEnum.StateWaiting.TRANSFER) {
             logger.info("заливаем в аккум");
-            if(bb.readableBytes() > 0) accumulator.writeBytes(bb);
+            if (bb.readableBytes() > 0) accumulator.writeBytes(bb);
             bb.release();
         }
-        if(currentStateWaiting == ClientEnum.StateWaiting.COMPLETING){
+        if (currentStateWaiting == ClientEnum.StateWaiting.COMPLETING) {
             logger.info("завершаем операцию");
-            var folder = (Folder)ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
+            var folder = (Folder) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
             accumulator.retain().release();
             currentState = ClientEnum.State.IDLE;
             currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
-            callback.callback(folder);
+            MainHelper.refreshServerFiles(folder);
         }
+    }
+
+    public void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {
+        currentState = state;
+        currentStateWaiting = stateWaiting;
     }
 
     @Override
@@ -57,7 +64,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         logger.info("got message complete");
-        if(currentState == ClientEnum.State.REFRESHING){
+        if (currentState == ClientEnum.State.REFRESHING) {
             currentStateWaiting = ClientEnum.StateWaiting.COMPLETING;
             refreshing(null);
         }
@@ -68,35 +75,34 @@ public class MainHandler extends ChannelInboundHandlerAdapter implements OnActio
 
     }
 
-    @Override
-    public void setOtherCallback(OnActionCallback callback) {
-        this.callback = callback;
-        logger.info("get and set callbacks");
-        callback.setOtherCallback(this);
-    }
-
-    @Override
-    public void callback(Object... args) {
-        if(args.length == 1){
-            if(args[0] instanceof ClientEnum.Request){
-                byte[] reqArr = new byte[1];
-                reqArr[0] = ((ClientEnum.Request)args[0]).getValue();
-                ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(reqArr));
-            }
-        }
-        if (args.length == 2) {
-            if (args[0] instanceof ClientEnum.State) {
-                logger.info("getting change state callback");
-                currentState = (ClientEnum.State) args[0];
-                currentStateWaiting = (ClientEnum.StateWaiting) args[1];
-            }
-            logger.info(args[0].getClass());
-            logger.info(args[1].getClass());
-
-            if(args[0] instanceof ArrayList){
-                var filesInfo = new ArrayList<>((ArrayList<FileInfo>)args[0]);
-                var files = new ArrayList<>((ArrayList<File>)args[1]);
-            }
+    public void sendRequest(ClientEnum.Request request, ClientEnum.RequestType requestType) {
+        if (requestType == null) {
+            byte[] reqArr = new byte[1];
+            reqArr[0] = request.getValue();
+            ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(reqArr));
         }
     }
+
+    public void send(ReferenceCounted bb, boolean isFlush) {
+        if (isFlush) {
+            ctx.writeAndFlush(bb);
+        } else {
+            ctx.write(bb);
+        }
+    }
+
+//    @Override
+//    public void callback(Object... args) {
+//        if (args.length == 2) {
+//            logger.info(args[0].getClass());
+//            logger.info(args[1].getClass());
+//
+//            if(args[0] instanceof ArrayList){
+//                var filesInfo = new ArrayList<>((ArrayList<FileInfo>)args[0]);
+//                var files = new ArrayList<>((ArrayList<File>)args[1]);
+//            }
+//        }
+//    }
+
+
 }

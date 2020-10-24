@@ -64,7 +64,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
         if (currentStateWaiting == ServerEnum.StateWaiting.COMPLETING) {
             logger.info("auth completing, accum size - " + accumulator.readableBytes());
             var user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-            accumulator.release();
+            accumulator.retain().release();
             var respArr = new byte[1];
 
             if (Database.getUser(user.getEmail(), user.getPassword()) == null) {
@@ -95,7 +95,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
         if (currentStateWaiting == ServerEnum.StateWaiting.COMPLETING) {
             logger.info("reg completing, accum size - " + accumulator.readableBytes());
             var user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-            accumulator.release();
+            accumulator.retain().release();
 
             var respArr = new byte[1];
             respArr[0] = Database.insertUser(user)
