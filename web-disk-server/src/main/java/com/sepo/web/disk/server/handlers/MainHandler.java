@@ -4,6 +4,7 @@ import com.sepo.web.disk.common.helpers.MainHelper;
 import com.sepo.web.disk.common.models.*;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.CharsetUtil;
@@ -67,6 +68,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     //region Getting file
 
     private void getFiles(ByteBuf bb) {
+        logger.info("getFiles");
         if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
             if (bytesExpected == 0L) {
                 gettingFileInfoSize(bb);
@@ -86,6 +88,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void gettingFileInfoSize(ByteBuf bb) {
+        logger.info("gettingFileInfoSize");
         // предохранитель в случае, если int не полностью пришел
         while (bb.readableBytes() > 0 && bytesReceived < 4L) {
             accumulator.writeByte(bb.readByte());
@@ -99,6 +102,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void gettingFileInfo(ByteBuf bb) {
+        logger.info("gettingFileInfo");
         while (bb.readableBytes() > 0 && bytesReceived != bytesExpected) {
             accumulator.writeByte(bb.readByte());
             bytesReceived++;
@@ -118,6 +122,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void gettingFile(ByteBuf bb) throws IOException {
+        logger.info("gettingFile");
         while (bb.readableBytes() > 0 && bytesReceived < bytesExpected) {
             bos.write(bb.readByte());
             bytesReceived++;
@@ -126,12 +131,13 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             bos.close();
             bytesReceived = 0L;
             bytesExpected = 0L;
+            setStateToIdle();
             if (bb.readableBytes() > 0) {
                 idleDistributionByMethods(bb);
             }
-            if (currentState != ServerEnum.State.IDLE) {
+
                 setStateToIdle();
-            }
+
         }
     }
     //endregion
@@ -211,6 +217,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                 }
                 if (bytesReceived == 4L) {
                     bytesExpected = accumulator.readInt();
+                    logger.info("expected - "+ bytesExpected);
                     accumulator.retain().release();
                     bytesReceived = 0L;
                 }
@@ -222,25 +229,30 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                 }
                 if (bytesReceived == bytesExpected) {
                     var fileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-                    currentStateWaiting = ServerEnum.StateWaiting.FILE;
-                    bytesExpected = fileInfo.getSize();
+                    logger.info("fileInfo - "+fileInfo.getAbsolutePath() + ", new value - "+fileInfo.getNewValue().getAbsolutePath());
                     accumulator.retain().release();
                     bytesReceived = 0L;
+                    bytesExpected = 0L;
                     setStateToIdle();
                     var oldFile = new File(fileInfo.getAbsolutePath());
                     var newFile = new File(fileInfo.getNewValue().getAbsolutePath());
+                    ByteBuf result = ByteBufAllocator.DEFAULT.directBuffer(1);
                     if(oldFile.renameTo(newFile)){
-                        // отправить отчет об успешной операции
+                        logger.info("success renaming");
+                        result.writeByte(ServerEnum.Respond.SUCCESS.getValue());
                     }else{
-                        // отправить отчет об неуспешной операции
+                        logger.info("failure renaming");
+                        result.writeByte(ServerEnum.Respond.FAILURE.getValue());
                     }
+                    ctx.writeAndFlush(result);
+                    if(bb.readableBytes() == 0) bb.release();
                 }
             }
         }
     }
 
     private void setStateToIdle() {
-        if (currentState != ServerEnum.State.IDLE) {
+        if (currentState != ServerEnum.State.IDLE && currentStateWaiting != ServerEnum.StateWaiting.REQUEST) {
             currentState = ServerEnum.State.IDLE;
             currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
         }
@@ -248,10 +260,11 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     // распределение ByteBuff по методом в состоянии IDLE
     private void idleDistributionByMethods(ByteBuf bb) {
+        if(bb == null || bb.readableBytes() == 0)return;
         switch (ClientEnum.getRequestByValue(bb.readByte())) {
             case REFRESH:
                 logger.info("REFRESH request");
-                bb.release();
+                bb.retain().release();
                 refresh();
                 break;
             case GET:

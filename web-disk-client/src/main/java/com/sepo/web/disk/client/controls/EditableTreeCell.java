@@ -11,6 +11,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.nio.file.Path;
+
 public class EditableTreeCell extends TreeCell<FileInfo> {
     private static final Logger logger = LogManager.getLogger(EditableTreeCell.class);
     private TextField textField;
@@ -86,22 +89,15 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     }
 
     private void editItem() {
-        if (filesController.isServerFilesController()) {
-            cancelEdit();
-            return;
-        }
-        var editedFileInfo = getFileInfo();
+        var editedFileInfo = new FileInfo();
         editedFileInfo.setName(textField.getText());
-        //var newFile = editedFileInfo.getPath().getParent().resolve(editedFileInfo.getName()).toFile();
-        if (filesController.renameFile(getFileInfo(), editedFileInfo)) {
-            //editedFileInfo = new FileInfo(newFile.toPath());
-            //commitEdit(editedFileInfo);
+        var oldPath = getFileInfo().getAbsolutePath();
+        oldPath = oldPath.replace(getFileInfo().getName(),"") + textField.getText();
+        //oldPah += textField.getText();
+        editedFileInfo.setAbsolutePath(oldPath);
 
-            filesController.getRefreshBtn().fire();
-
-        } else {
-            cancelEdit();
-        }
+        filesController.renameFile(getFileInfo(), editedFileInfo);
+        commitEdit(editedFileInfo);
     }
 
     private String getFileName() {

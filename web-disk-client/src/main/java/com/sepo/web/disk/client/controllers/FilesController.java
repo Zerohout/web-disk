@@ -93,5 +93,5 @@ public abstract class FilesController {
         this.currentOperation = currentOperation;
     }
 
-    public abstract boolean renameFile(FileInfo oldValue, FileInfo newValue);
+    public abstract void renameFile(FileInfo oldValue, FileInfo newValue);
 }

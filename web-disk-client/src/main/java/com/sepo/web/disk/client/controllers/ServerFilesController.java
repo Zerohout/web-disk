@@ -5,6 +5,7 @@ import com.sepo.web.disk.client.Helpers.MainHelper;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.models.FileInfo;
 import com.sepo.web.disk.common.models.Folder;
+import com.sepo.web.disk.common.models.ServerEnum;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -31,7 +32,6 @@ import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
 
 public class ServerFilesController extends FilesController implements Initializable {
     private static final Logger logger = LogManager.getLogger(ServerFilesController.class);
-    CountDownLatch awaitingLatch;
 
     private Folder serverFolder;
 
@@ -59,6 +59,7 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     private void sendRefreshRequest() {
+        logger.info("send REFRESH request");
         MainHelper.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
         MainHelper.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
     }
@@ -89,7 +90,7 @@ public class ServerFilesController extends FilesController implements Initializa
         refreshBtn.fire();
     }
 
-    private void sendFile(File file){
+    private void sendFile(File file) {
         ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
         MainHelper.sendByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), false);
         packAndSendObj(new FileInfo(file.toPath()));
@@ -101,7 +102,7 @@ public class ServerFilesController extends FilesController implements Initializa
         }
     }
 
-    private void packAndSendObj(Object object){
+    private void packAndSendObj(Object object) {
         var fileInfoBB = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
         var fileInfoSize = fileInfoBB.readableBytes();
         var sizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
@@ -112,10 +113,11 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
+        MainHelper.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.DELETE.getValue());
-        MainHelper.sendByteBuf(req,false);
+        MainHelper.sendByteBuf(req, false);
         var selectedFilesInfo = filesTView.getSelectionModel().getSelectedItems()
                 .parallelStream()
                 .map(TreeItem::getValue)
@@ -136,20 +138,20 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
 
-
     public TreeView<FileInfo> getFilesTView() {
         return filesTView;
     }
 
     @Override
-    public boolean renameFile(FileInfo oldValue, FileInfo newValue) {
-        awaitingLatch = new CountDownLatch(1);
+    public void renameFile(FileInfo oldValue, FileInfo newValue) {
+        logger.info("renaming. oldValue - "+oldValue.getAbsolutePath()+", new value - "+newValue.getAbsolutePath());
+
         oldValue.setNewValue(newValue);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.RENAME.getValue());
-        MainHelper.sendByteBuf(req,false);
+        MainHelper.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
+        MainHelper.sendByteBuf(req, false);
         packAndSendObj(oldValue);
-        return false;
     }
 }

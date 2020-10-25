@@ -2,10 +2,12 @@ package com.sepo.web.disk.client.handlers;
 
 import com.sepo.web.disk.client.Helpers.MainHelper;
 import com.sepo.web.disk.client.Helpers.OnActionCallback;
+import com.sepo.web.disk.client.controllers.ServerFilesController;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.models.FileInfo;
 import com.sepo.web.disk.common.models.Folder;
+import com.sepo.web.disk.common.models.ServerEnum;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -58,6 +60,13 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         logger.info("got message");
         if (currentState == ClientEnum.State.REFRESHING) {
             refreshing((ByteBuf) msg);
+        }
+        if(currentState == ClientEnum.State.IDLE && currentStateWaiting == ClientEnum.StateWaiting.RESULT){
+        logger.info("got result");
+            var respond = ServerEnum.getRespondByValue(((ByteBuf)msg).readByte());
+            MainHelper.giveRenameResult(respond);
+            ((ByteBuf)msg).release();
+            currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
         }
     }
 

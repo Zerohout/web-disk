@@ -49,10 +49,18 @@ public class ClientFilesController extends FilesController implements Initializa
     }
 
     @Override
-    public boolean renameFile(FileInfo oldValue, FileInfo newValue) {
+    public void renameFile(FileInfo oldValue, FileInfo newValue) {
         var newFile = newValue.getPath().getParent().resolve(newValue.getName()).toFile();
         var oldFile = oldValue.getPath().toFile();
-        return oldFile.renameTo(newFile);
+        oldFile.renameTo(newFile);
+        refreshBtn.fire();
+    }
+
+    public void respondToRenameResult(ServerEnum.Respond result){
+        if(result == ServerEnum.Respond.SUCCESS){
+
+        }
+        refreshBtn.fire();
     }
 
     @Override
