@@ -4,11 +4,23 @@ import com.sepo.web.disk.common.models.FileInfo;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TreeView;
+
+import java.nio.file.Files;
 
 import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.refreshTView;
 
 public abstract class FilesController {
+    protected Operation currentOperation;
+
+
+
+    public enum Operation{
+        MOVING,
+        IDLE
+    }
+
     @FXML
     protected Button refreshBtn;
     @FXML
@@ -27,11 +39,14 @@ public abstract class FilesController {
     protected TreeView<FileInfo> filesTView;
     @FXML
     public abstract void refreshBtnAction(ActionEvent actionEvent);
+    @FXML
+    protected Label titleLbl;
 
-    private boolean isServerFilesController;
+    private final boolean isServerFilesController;
 
     public FilesController(boolean isServerFilesController) {
         this.isServerFilesController = isServerFilesController;
+        currentOperation = Operation.IDLE;
     }
 
     public Button getRefreshBtn() {
@@ -69,4 +84,14 @@ public abstract class FilesController {
     public boolean isServerFilesController() {
         return isServerFilesController;
     }
+
+    public Operation getCurrentOperation() {
+        return currentOperation;
+    }
+
+    public void setCurrentOperation(Operation currentOperation) {
+        this.currentOperation = currentOperation;
+    }
+
+    public abstract boolean renameFile(FileInfo oldValue, FileInfo newValue);
 }

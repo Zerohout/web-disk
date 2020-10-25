@@ -24,6 +24,8 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     @Override
     public void updateSelected(boolean b) {
         super.updateSelected(b);
+        if (filesController.getCurrentOperation() != FilesController.Operation.IDLE) return;
+
         var selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
@@ -84,17 +86,19 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     }
 
     private void editItem() {
-        if(filesController.isServerFilesController()) {
+        if (filesController.isServerFilesController()) {
             cancelEdit();
             return;
         }
         var editedFileInfo = getFileInfo();
         editedFileInfo.setName(textField.getText());
-        var newFile = editedFileInfo.getPath().getParent().resolve(editedFileInfo.getName()).toFile();
-        if (getFileInfo().getPath().toFile().renameTo(newFile)) {
-            editedFileInfo = new FileInfo(newFile.toPath());
-            commitEdit(editedFileInfo);
+        //var newFile = editedFileInfo.getPath().getParent().resolve(editedFileInfo.getName()).toFile();
+        if (filesController.renameFile(getFileInfo(), editedFileInfo)) {
+            //editedFileInfo = new FileInfo(newFile.toPath());
+            //commitEdit(editedFileInfo);
+
             filesController.getRefreshBtn().fire();
+
         } else {
             cancelEdit();
         }

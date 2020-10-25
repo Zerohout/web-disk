@@ -13,7 +13,7 @@
       prefHeight="400.0" prefWidth="600.0"
       alignment="CENTER" spacing="3" HBox.hgrow="ALWAYS">
     <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-        <Label styleClass="field-description-label" text="Downloaded"/>
+        <Label fx:id="titleLbl" styleClass="field-description-label"/>
         <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <!--Client downloaded files-->
             <TreeView fx:id="filesTView" maxHeight="Infinity" maxWidth="Infinity" editable="true"
@@ -43,13 +43,13 @@
         </HBox>
     </VBox>
 
-    <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-        <Label styleClass="field-description-label" text="File info"/>
+<!--    <VBox alignment="CENTER" VBox.vgrow="ALWAYS">-->
+<!--        <Label styleClass="field-description-label" text="File info"/>-->
 
-        <ListView prefHeight="200.0" VBox.vgrow="ALWAYS">
+<!--        <ListView prefHeight="200.0" VBox.vgrow="ALWAYS">-->
 
-        </ListView>
-    </VBox>
+<!--        </ListView>-->
+<!--    </VBox>-->
     <padding>
         <Insets bottom="10" left="5" right="3" top="5"/>
     </padding>

@@ -49,7 +49,15 @@ public class ClientFilesController extends FilesController implements Initializa
     }
 
     @Override
+    public boolean renameFile(FileInfo oldValue, FileInfo newValue) {
+        var newFile = newValue.getPath().getParent().resolve(newValue.getName()).toFile();
+        var oldFile = oldValue.getPath().toFile();
+        return oldFile.renameTo(newFile);
+    }
+
+    @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        titleLbl.setText("Downloaded files");
         clientFolder = new Folder(new FileInfo(Path.of(CLIENT_FOLDER_PATH_NAME)), CLIENT_FOLDER_NAME);
         initButtons();
         initTreeViews(filesTView, this);
