@@ -1,40 +1,42 @@
 package com.sepo.web.disk.server.handlers;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
+import com.sepo.web.disk.common.helpers.MainHelper;
+import com.sepo.web.disk.common.models.*;
+import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.CharsetUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
-import com.sepo.web.disk.common.models.*;
-import com.sepo.web.disk.common.service.*;
-import com.sepo.web.disk.server.helpers.MainHelper;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-@ChannelHandler.Sharable
 public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
     private ServerEnum.State currentState = ServerEnum.State.IDLE;
     private ServerEnum.StateWaiting currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
     private ClientEnum.Request request;
     private ClientEnum.RequestType requestType;
-    private ArrayList<FileInfo> fileInfoList = new ArrayList<>();
-    private int currFileInfoIndex = 0;
-    private FileInfo currFileInfo;
+    private long bytesReceived;
+    private long bytesExpected;
+    ByteBuf accumulator;
+    BufferedOutputStream bos;
+
     ChannelHandlerContext ctx;
     Path userFilesPath;
 
     public MainHandler(Path userFilesPath) {
         this.userFilesPath = userFilesPath;
+
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-
         logger.info("Client connected...");
     }
 
@@ -55,116 +57,240 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void refresh() {
-        var dir = new Folder(new FileInfo(userFilesPath));
-        MainHelper.createFileTree(userFilesPath, dir);
+        var dir = new Folder(new FileInfo(userFilesPath), MainHelper.SERVER_FOLDER_NAME);
+        MainHelper.createFileTree(userFilesPath, dir, MainHelper.SERVER_FOLDER_NAME);
         var dirBytes = ObjectEncoderDecoder.convertObjectToByteArray(dir);
-        ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes));
+        var bb = ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes);
+        ctx.writeAndFlush(bb);
+        setStateToIdle();
+    }
+
+    //region Getting file
+
+    private void getFiles(ByteBuf bb) {
+        logger.info("getFiles");
+        if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
+            if (bytesExpected == 0L) {
+                gettingFileInfoSize(bb);
+            }
+            if (bytesExpected > 0L) {
+                gettingFileInfo(bb);
+            }
+        }
+        if (currentStateWaiting == ServerEnum.StateWaiting.FILE) {
+            try {
+                gettingFile(bb);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (bb.readableBytes() == 0) bb.release();
+    }
+
+    private void gettingFileInfoSize(ByteBuf bb) {
+        logger.info("gettingFileInfoSize");
+        // предохранитель в случае, если int не полностью пришел
+        while (bb.readableBytes() > 0 && bytesReceived < 4L) {
+            accumulator.writeByte(bb.readByte());
+            bytesReceived++;
+        }
+        if (bytesReceived == 4L) {
+            bytesExpected = accumulator.readInt();
+            accumulator.retain().release();
+            bytesReceived = 0L;
+        }
+    }
+
+    private void gettingFileInfo(ByteBuf bb) {
+        logger.info("gettingFileInfo");
+        while (bb.readableBytes() > 0 && bytesReceived != bytesExpected) {
+            accumulator.writeByte(bb.readByte());
+            bytesReceived++;
+        }
+        if (bytesReceived == bytesExpected) {
+            var fileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
+            currentStateWaiting = ServerEnum.StateWaiting.FILE;
+            bytesExpected = fileInfo.getSize();
+            accumulator.retain().release();
+            bytesReceived = 0L;
+            try {
+                bos = new BufferedOutputStream(new FileOutputStream(userFilesPath.resolve(fileInfo.getName()).toString()));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void gettingFile(ByteBuf bb) throws IOException {
+        logger.info("gettingFile");
+        while (bb.readableBytes() > 0 && bytesReceived < bytesExpected) {
+            bos.write(bb.readByte());
+            bytesReceived++;
+        }
+        if (bytesReceived == bytesExpected) {
+            bos.close();
+            bytesReceived = 0L;
+            bytesExpected = 0L;
+            setStateToIdle();
+            if (bb.readableBytes() > 0) {
+                idleDistributionByMethods(bb);
+            }
+
+                setStateToIdle();
+
+        }
+    }
+    //endregion
+
+    private void deleteFiles(ByteBuf bb) {
+        if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
+            if (bytesExpected == 0L) {
+                while (bytesReceived < 4L && bb.readableBytes() > 0) {
+                    accumulator.writeByte(bb.readByte());
+                    bytesReceived++;
+                }
+                if (bytesReceived == 4L) {
+                    bytesExpected = accumulator.readInt();
+                    accumulator.retain().release();
+                    bytesReceived = 0L;
+                }
+            }
+            if (bytesExpected > 0) {
+                while (bytesReceived != bytesExpected && bb.readableBytes() > 0) {
+                    accumulator.writeByte(bb.readByte());
+                    bytesReceived++;
+                }
+                if (bytesReceived == bytesExpected) {
+                    var deletingList = new ArrayList<>((ArrayList<FileInfo>) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator));
+                    accumulator.retain().release();
+                    bytesReceived = 0L;
+                    bytesExpected = 0L;
+                    for (var fileInfo : deletingList) {
+                        try {
+                            Files.delete(Path.of(fileInfo.getAbsolutePath()));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (bb.readableBytes() > 0) {
+                        idleDistributionByMethods(bb);
+                    }
+                    setStateToIdle();
+
+
+                }
+            }
+        }
+        if (bb.readableBytes() == 0) bb.release();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (this.ctx == null) this.ctx = ctx;
+        if (accumulator == null) accumulator = ctx.alloc().buffer(1024 * 1024, 1024 * 1024 * 25);
+        if (msg == null) return;
+
+        var bb = (ByteBuf) msg;
+        if (bb.readableBytes() == 0) return;
         if (currentState == ServerEnum.State.IDLE) {
-            var bb = (ByteBuf) msg;
-            logger.info("get request");
-
-            request = ClientEnum.getRequestByValue(bb.readByte());
-            if (request == ClientEnum.Request.REFRESH) {
-                refresh();
-                currentState = ServerEnum.State.IDLE;
-                currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
-
-            }
-
+            idleDistributionByMethods(bb);
+        }
+        if (bb.readableBytes() == 0) return;
+        if (currentState == ServerEnum.State.GETTING) {
+            getFiles(bb);
+        }
+        if (currentState == ServerEnum.State.DELETING) {
+            deleteFiles(bb);
+        }
+        if (currentState == ServerEnum.State.RENAMING) {
+            renameFile(bb);
         }
 
-
-//        // Главная логика обмена сообщениями c сервером
-//        switch (currentState.getCurrState()) {
-//            case IDLE:
-//                var request = (ClientRequest) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
-//
-//                switch (request.getRequest()) {
-//                    case UPDATE:
-//                        logger.info("getting UPDATE request");
-//                        if (currFileInfoIndex < fileInfoList.size()) {
-//                            logger.info(String.format("Send fileInfo %d/%d", (currFileInfoIndex + 1), fileInfoList.size()));
-//                            ctx.writeAndFlush(ObjectEncoderDecoder.EncodeObjToByteBuf(fileInfoList.get(currFileInfoIndex)));
-//                            currFileInfoIndex++;
-//
-//                        } else {
-//                            logger.info("send respond");
-//                            send(ctx, new ServerRespond(ServerRespond.Responds.UPDATE, ServerRespond.Results.SUCCESS));
-//                            currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
-//                        }
-//                        break;
-//                    case SEND:
-//                        logger.info("getting SEND request");
-//                        currentState.setCurrState(ServerState.State.GET).setCurrWait(ServerState.Wait.DATA);
-//                        send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE_INFO, ServerRespond.Results.PROCESSING));
-//                        break;
-//                }
-//                break;
-//            case GET:
-//                switch (currentState.getCurrWait()) {
-//                    case DATA:
-//                        currFileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(ctx, bb);
-//                        logger.info(String.format("get fileInfo. File - %s, size %,d.", currFileInfo.getFileFullName(), currFileInfo.getFileSize()));
-//                        currentState.setCurrWait(ServerState.Wait.FILE);
-//                        send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE_INFO, ServerRespond.Results.SUCCESS));
-//                        break;
-//                    case FILE:
-//                        logger.info("get file");
-//
-////                        var out = new BufferedOutputStream(new FileOutputStream(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()));
-////                        var receivedBytes = 0L;
-////                        while (bb.readableBytes() > 0) {
-////                            out.write(bb.readByte());
-////                            receivedBytes++;
-////                            if(receivedBytes == currFileInfo.getFileSize()){
-////                                break;
-////                            }
-////                        }
-////                        out.close();
-//                        try (var out = new BufferedOutputStream(new FileOutputStream(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()))) {
-//
-//                            logger.info("байтов к прочтению - "+ bb.readableBytes());
-//                            while (bb.readableBytes() > 0) {
-//                                out.write(bb.readByte());
-//                            }
-//                        } catch (IOException ex) {
-//                            ex.printStackTrace();
-//                            logger.info("file not got.");
-//                            send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE, ServerRespond.Results.FAILURE));
-//                            if (Files.size(new File(userStoragePath.resolve(currFileInfo.getFileFullName()).toString()).toPath()) ==
-//                                    currFileInfo.getFileSize()) {
-//                                currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
-//                                bb.release();
-//
-//                            }
-//                            return;
-//                        }
-//                        logger.info("file successful got");
-//                        //send(ctx, new ServerRespond(ServerRespond.Responds.GET_FILE, ServerRespond.Results.SUCCESS));
-//                        // currentState.setCurrState(ServerState.State.IDLE).setCurrWait(ServerState.Wait.REQUEST);
-//                        break;
-//                }
-//        }
-        // bb.release();
     }
 
-    // получение и составление дерева директорий в папке downloaded
-    private void getFileList(Path path) throws IOException {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            stream.forEach(p -> {
-                fileInfoList.add(new FileInfo(p));
-                try {
-                    if (Files.isDirectory(p)) getFileList(p);
-                } catch (IOException e) {
-                    e.printStackTrace();
+    private void renameFile(ByteBuf bb) {
+        if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
+            if (bytesExpected == 0L) {
+                while (bytesReceived < 4L && bb.readableBytes() > 0) {
+                    accumulator.writeByte(bb.readByte());
+                    bytesReceived++;
                 }
-            });
+                if (bytesReceived == 4L) {
+                    bytesExpected = accumulator.readInt();
+                    logger.info("expected - "+ bytesExpected);
+                    accumulator.retain().release();
+                    bytesReceived = 0L;
+                }
+            }
+            if (bytesExpected > 0L) {
+                while (bb.readableBytes() > 0 && bytesReceived != bytesExpected) {
+                    accumulator.writeByte(bb.readByte());
+                    bytesReceived++;
+                }
+                if (bytesReceived == bytesExpected) {
+                    var fileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
+                    logger.info("fileInfo - "+fileInfo.getAbsolutePath() + ", new value - "+fileInfo.getNewValue().getAbsolutePath());
+                    accumulator.retain().release();
+                    bytesReceived = 0L;
+                    bytesExpected = 0L;
+                    setStateToIdle();
+                    var oldFile = new File(fileInfo.getAbsolutePath());
+                    var newFile = new File(fileInfo.getNewValue().getAbsolutePath());
+                    ByteBuf result = ByteBufAllocator.DEFAULT.directBuffer(1);
+                    if(oldFile.renameTo(newFile)){
+                        logger.info("success renaming");
+                        result.writeByte(ServerEnum.Respond.SUCCESS.getValue());
+                    }else{
+                        logger.info("failure renaming");
+                        result.writeByte(ServerEnum.Respond.FAILURE.getValue());
+                    }
+                    ctx.writeAndFlush(result);
+                    if(bb.readableBytes() == 0) bb.release();
+                }
+            }
         }
+    }
+
+    private void setStateToIdle() {
+        if (currentState != ServerEnum.State.IDLE && currentStateWaiting != ServerEnum.StateWaiting.REQUEST) {
+            currentState = ServerEnum.State.IDLE;
+            currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
+        }
+    }
+
+    // распределение ByteBuff по методом в состоянии IDLE
+    private void idleDistributionByMethods(ByteBuf bb) {
+        if(bb == null || bb.readableBytes() == 0)return;
+        switch (ClientEnum.getRequestByValue(bb.readByte())) {
+            case REFRESH:
+                logger.info("REFRESH request");
+                bb.retain().release();
+                refresh();
+                break;
+            case GET:
+                logger.info("GET request");
+                currentState = ServerEnum.State.GETTING;
+                currentStateWaiting = ServerEnum.StateWaiting.TRANSFER;
+                break;
+            case OPERATION:
+                logger.info("OPERATION request");
+                switch (ClientEnum.getRequestTypeByValue(bb.readByte())) {
+                    case DELETE:
+                        logger.info("\tDELETE requestType");
+                        currentState = ServerEnum.State.DELETING;
+                        currentStateWaiting = ServerEnum.StateWaiting.TRANSFER;
+                        break;
+                    case RENAME:
+                        logger.info("\tRENAME requestType");
+                        currentState = ServerEnum.State.RENAMING;
+                        currentStateWaiting = ServerEnum.StateWaiting.TRANSFER;
+                        break;
+                }
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     }
 
     @Override
@@ -172,11 +298,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         cause.printStackTrace();
         ctx.close();
     }
-
-    private void send(ChannelHandlerContext ctx, Sendable obj) {
-        ctx.writeAndFlush(ObjectEncoderDecoder.EncodeObjToByteBuf(obj));
-    }
-
 
 }
 

@@ -67,8 +67,11 @@ public class Network {
         }
     }
 
+    public SocketChannel getChannel() {
+        return channel;
+    }
 
-//
+    //
 //    public void setNetworkHandler() {
 //        this.networkHandler = new NetworkHandler();
 //    }

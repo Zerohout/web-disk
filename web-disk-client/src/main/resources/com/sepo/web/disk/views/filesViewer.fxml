@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<?import javafx.geometry.Insets?>
+<fx:root type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      prefHeight="400.0" prefWidth="600.0"
+      alignment="CENTER" spacing="3" HBox.hgrow="ALWAYS">
+    <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
+        <Label fx:id="titleLbl" styleClass="field-description-label"/>
+        <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+            <!--Client downloaded files-->
+            <TreeView fx:id="filesTView" maxHeight="Infinity" maxWidth="Infinity" editable="true"
+
+                      prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+                      />
+            <VBox spacing="5">
+                <Button fx:id="refreshBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#refreshBtnAction"/>
+                <Button fx:id="addBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#addBtnAction"/>
+                <Button fx:id="downloadBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30"
+                        minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
+                <Button fx:id="deleteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#deleteBtnAction"/>
+                <Button fx:id="moveBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
+                <Button fx:id="acceptBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
+                <Button fx:id="cancelBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#cancelBtnAction"/>
+                <padding>
+                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                </padding>
+            </VBox>
+        </HBox>
+    </VBox>
+
+<!--    <VBox alignment="CENTER" VBox.vgrow="ALWAYS">-->
+<!--        <Label styleClass="field-description-label" text="File info"/>-->
+
+<!--        <ListView prefHeight="200.0" VBox.vgrow="ALWAYS">-->
+
+<!--        </ListView>-->
+<!--    </VBox>-->
+    <padding>
+        <Insets bottom="10" left="5" right="3" top="5"/>
+    </padding>
+</fx:root>
+

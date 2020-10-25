@@ -1,9 +1,12 @@
 package com.sepo.web.disk.client;
 
+import com.sepo.web.disk.client.Helpers.MainHelper;
+import com.sepo.web.disk.client.handlers.MainHandler;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -28,6 +31,9 @@ public class ClientApp extends Application {
         scene = new Scene(loadFXML("signIn"));
         stage.setScene(scene);
         stage.show();
+        var connection = new Thread(MainHelper::connectToServer);
+        connection.setDaemon(true);
+        Platform.runLater(connection::start);
     }
 
     @Override
@@ -55,6 +61,10 @@ public class ClientApp extends Application {
     public static void main(String[] args) {
         launch();
 
+    }
+
+    public static Stage getStage(){
+        return stage;
     }
 
 

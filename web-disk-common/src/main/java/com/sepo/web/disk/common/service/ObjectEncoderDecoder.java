@@ -59,4 +59,9 @@ public class ObjectEncoderDecoder {
             throw new RuntimeException("Не удалось декодировать ByteBuf в объект");
         }
     }
+
+    public static int getObjectBytesCount(Object obj){
+        var objByteArr = convertObjectToByteArray(obj);
+        return objByteArr.length;
+    }
 }

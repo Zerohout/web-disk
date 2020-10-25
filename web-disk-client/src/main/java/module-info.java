@@ -8,5 +8,6 @@ module com.sepo.web.disk.web.disk.client {
 
     opens com.sepo.web.disk.client.controllers to javafx.fxml;
     exports com.sepo.web.disk.client;
+    exports com.sepo.web.disk.client.controls;
 }
 

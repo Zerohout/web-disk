@@ -52,6 +52,10 @@ public class FileInfo implements Sendable {
         return this.absolutePath;
     }
 
+    public void setAbsolutePath(String absolutePath){
+        this.absolutePath = absolutePath;
+    }
+
     public long getSize() {
         return this.size;
     }
@@ -83,12 +87,5 @@ public class FileInfo implements Sendable {
     public void setNewValue(FileInfo newValue) {
         this.newValue = newValue;
     }
-
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
-
 }
 
