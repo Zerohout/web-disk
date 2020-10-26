@@ -1,17 +1,12 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.client.ClientApp;
-import com.sepo.web.disk.client.Helpers.MainHelper;
+import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
+import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,11 +16,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
 
@@ -44,23 +37,28 @@ public class ClientFilesController extends FilesController implements Initializa
                 e.printStackTrace();
             }
         }
-        MainHelper.setClientFilesController(this);
+        MainBridge.setClientFilesController(this);
 
     }
 
     @Override
     public void renameFile(FileInfo oldValue, FileInfo newValue) {
-        var newFile = newValue.getPath().getParent().resolve(newValue.getName()).toFile();
-        var oldFile = oldValue.getPath().toFile();
-        oldFile.renameTo(newFile);
+        var oldFile = new File(oldValue.getAbsolutePath());
+        oldFile.renameTo(new File(newValue.getAbsolutePath()));
         refreshBtn.fire();
     }
 
-    public void respondToRenameResult(ServerEnum.Respond result){
-        if(result == ServerEnum.Respond.SUCCESS){
-
-        }
+    public void respondToRenameResult(ServerEnum.Respond result) {
         refreshBtn.fire();
+    }
+
+    @FXML
+    public void downloadBtnAction(ActionEvent actionEvent) {
+        var selectedItems = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
+        for (var fileInfo : selectedItems) {
+            MainBridge.sendFile(fileInfo);
+        }
+        MainBridge.refreshServerFiles();
     }
 
     @Override
@@ -101,18 +99,18 @@ public class ClientFilesController extends FilesController implements Initializa
         var fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл для копирования в папку загрузок");
         var chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
-        if(chosenFiles == null) return;
+        if (chosenFiles == null) return;
         var files = new ArrayList<>(chosenFiles);
         Path destinationPath;
-        if (filesTView.getSelectionModel().getSelectedItems().size() == 0) {
-            destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath();
-        } else {
-            var selectedFileInfo = filesTView.getSelectionModel().getSelectedItems().get(0).getValue();
+        if(filesTView.getSelectionModel().getSelectedItems().size() == 1){
+            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
             if (selectedFileInfo.isFolder()) {
                 destinationPath = selectedFileInfo.getPath();
             } else {
                 destinationPath = selectedFileInfo.getPath().getParent();
             }
+        }else {
+            destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath();
         }
         try {
             for (var file : files) {
@@ -138,13 +136,9 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
-        var selectedFilesInfo = filesTView.getSelectionModel().getSelectedItems()
-                .parallelStream()
-                .map(TreeItem::getValue)
-                .collect(Collectors.toCollection(ArrayList::new));
+        var selectedFilesInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
         try {
             for (var fileInfo : selectedFilesInfo) {
-                logger.info("deleting "+fileInfo.getAbsolutePath());
                 Files.delete(fileInfo.getPath());
             }
         } catch (IOException e) {

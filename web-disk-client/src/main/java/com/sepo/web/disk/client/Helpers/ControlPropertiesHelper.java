@@ -11,6 +11,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class ControlPropertiesHelper {
     public static final String CLIENT_FOLDER_PATH_NAME = "downloaded";
@@ -89,6 +91,13 @@ public class ControlPropertiesHelper {
     public static void setBtnIcon(String iconName, Button btn) {
         var icon = new ImageView(new Image(ClientApp.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png"), 25, 25, true, true));
         btn.setGraphic(icon);
+    }
+
+    public static ArrayList<FileInfo> getSelectedFilesInfo(TreeView<FileInfo> filesTView){
+        return filesTView.getSelectionModel().getSelectedItems()
+                .parallelStream()
+                .map(TreeItem::getValue)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }

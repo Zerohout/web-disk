@@ -1,8 +1,10 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.client.ClientApp;
-import com.sepo.web.disk.client.Helpers.MainHelper;
+import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -31,7 +33,7 @@ public class SignUpController implements Initializable {
     @FXML
     private void backAction(ActionEvent actionEvent) throws IOException {
         ClientApp.setScene("signIn");
-        MainHelper.setSignUpController(null);
+        MainBridge.setSignUpController(null);
     }
 
     @FXML
@@ -47,8 +49,10 @@ public class SignUpController implements Initializable {
             return;
         }
 
-        MainHelper.setState(ClientEnum.State.REG, ClientEnum.StateWaiting.RESULT);
-        MainHelper.sendUserToServer(new User(sighUpEmailTField.getText(), signUpPassPField.getText()));
+        MainBridge.setState(ClientEnum.State.REG, ClientEnum.StateWaiting.RESULT);
+        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.REG.getValue()), true);
+        MainBridge.authPackAndSendObj(new User(sighUpEmailTField.getText(), signUpPassPField.getText()));
     }
 
     public void respondToAuthResult(ServerEnum.Respond respond) {
@@ -65,7 +69,7 @@ public class SignUpController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        MainHelper.setSignUpController(this);
+        MainBridge.setSignUpController(this);
     }
 
 

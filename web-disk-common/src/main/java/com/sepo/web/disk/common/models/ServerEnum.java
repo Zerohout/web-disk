@@ -28,9 +28,10 @@ public class ServerEnum {
     public enum StateWaiting {
         REQUEST((byte) -11), // IDLE
         FILE((byte) -12), // IDLE, AUTH, REG
-        TRANSFER((byte) -13),
+        OBJECT((byte) -13),
         COMPLETING((byte) -14),
-        FILE_TREE((byte) -15);
+        FILE_TREE((byte) -15),
+        OBJECT_SIZE((byte) -16);
 
         private byte value;
 

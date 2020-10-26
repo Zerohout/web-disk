@@ -7,7 +7,6 @@ import com.sepo.web.disk.server.helpers.MainHelper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.socket.SocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,21 +18,20 @@ import static com.sepo.web.disk.server.connection.Network.SERVER_STORAGE_NAME;
 
 public class AuthHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(AuthHandler.class);
-    ServerEnum.State currentState;
-    ServerEnum.StateWaiting currentStateWaiting;
-    ByteBuf accumulator;
-    ClientEnum.Request request;
-    ChannelHandlerContext ctx;
-    Path userFilesPath;
+    private MainHelper mh;
+    private ClientEnum.Request request;
 
     public AuthHandler() {
+        mh = new MainHelper();
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         logger.info("Channel registered");
-        accumulator = ctx.alloc().buffer(1024 * 1024, 1024 * 1024 * 25);
-        this.ctx = ctx;
+        mh.setCtx(ctx)
+                .setAccumulator(ctx.alloc().buffer(1024 * 1024, 1024 * 1024 * 25))
+                .setCurrentState(ServerEnum.State.IDLE)
+                .setCurrentStateWaiting(ServerEnum.StateWaiting.REQUEST);
     }
 
     @Override
@@ -44,8 +42,6 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("Channel active");
-        currentState = ServerEnum.State.IDLE;
-        currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
     }
 
     @Override
@@ -55,63 +51,50 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void auth(ByteBuf bb) {
-        if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
-            logger.info("auth transfer, buffer size - " + bb.readableBytes());
-            if (bb.readableBytes() > 0) accumulator.writeBytes(bb);
-            logger.info("auth transfer, accum size - " + accumulator.readableBytes());
-            bb.release();
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
+            mh.setObjectSize(bb);
         }
-        if (currentStateWaiting == ServerEnum.StateWaiting.COMPLETING) {
-            logger.info("auth completing, accum size - " + accumulator.readableBytes());
-            var user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-            accumulator.retain().release();
-            var respArr = new byte[1];
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
+            mh.setObject(bb);
+        }
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
+            var user = (User) mh.getReceivedObj();
 
+            ServerEnum.Respond result;
             if (Database.getUser(user.getEmail(), user.getPassword()) == null) {
-                respArr[0] = ServerEnum.Respond.FAILURE.getValue();
-                ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(respArr));
+                result = ServerEnum.Respond.FAILURE;
             } else {
-                respArr[0] = ServerEnum.Respond.SUCCESS.getValue();
-                userFilesPath = Path.of(SERVER_STORAGE_NAME).resolve(user.getEmail());
+                result = ServerEnum.Respond.SUCCESS;
+                mh.setUserFilesPath(Path.of(SERVER_STORAGE_NAME).resolve(user.getEmail()));
                 createUserDir();
-
-                ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(respArr));
-                ctx.pipeline().remove(this);
-                ctx.pipeline().addLast(new MainHandler(userFilesPath));
+                mh.getCtx().pipeline().remove(this);
+                mh.getCtx().pipeline().addLast(new MainHandler(mh));
             }
-            currentState = ServerEnum.State.IDLE;
-            currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
+            mh.sendResult(result);
         }
 
     }
 
     private void reg(ByteBuf bb) {
-        if (currentStateWaiting == ServerEnum.StateWaiting.TRANSFER) {
-            logger.info("reg transfer, buffer size - " + bb.readableBytes());
-            if (bb.readableBytes() > 0) accumulator.writeBytes(bb);
-            logger.info("reg transfer, accum size - " + accumulator.readableBytes());
-            bb.release();
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
+            mh.setObjectSize(bb);
         }
-        if (currentStateWaiting == ServerEnum.StateWaiting.COMPLETING) {
-            logger.info("reg completing, accum size - " + accumulator.readableBytes());
-            var user = (User) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
-            accumulator.retain().release();
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
+            mh.setObject(bb);
+        }
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
+            var result = Database.insertUser((User) mh.getReceivedObj())
+                    ? ServerEnum.Respond.SUCCESS
+                    : ServerEnum.Respond.FAILURE;
 
-            var respArr = new byte[1];
-            respArr[0] = Database.insertUser(user)
-                    ? ServerEnum.Respond.SUCCESS.getValue()
-                    : ServerEnum.Respond.FAILURE.getValue();
-
-            ctx.writeAndFlush(ObjectEncoderDecoder.EncodeByteArraysToByteBuf(respArr));
-            currentState = ServerEnum.State.IDLE;
-            currentStateWaiting = ServerEnum.StateWaiting.REQUEST;
+            mh.sendResult(result);
         }
     }
 
     private void createUserDir() {
-        if (Files.notExists(userFilesPath)) {
+        if (Files.notExists(mh.getUserFilesPath())) {
             try {
-                Files.createDirectory(userFilesPath);
+                Files.createDirectory(mh.getUserFilesPath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -122,30 +105,32 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         logger.info("channel read");
 
-        if (currentState == ServerEnum.State.IDLE) {
-            var bb = (ByteBuf) msg;
-            logger.info("get request");
-            request = ClientEnum.getRequestByValue(bb.readByte());
-            if (request == ClientEnum.Request.AUTH) {
-                currentState = ServerEnum.State.AUTH;
-                currentStateWaiting = ServerEnum.StateWaiting.TRANSFER;
+        var bb = (ByteBuf) msg;
+        while (bb.readableBytes() > 0) {
+            if (mh.getCurrentState() == ServerEnum.State.IDLE) {
+                logger.info("get request");
+                idleDistributionByMethods(bb);
+            }
+            if (mh.getCurrentState() == ServerEnum.State.AUTH) {
                 auth(bb);
             }
-            if (request == ClientEnum.Request.REG) {
-                currentState = ServerEnum.State.REG;
-                currentStateWaiting = ServerEnum.StateWaiting.TRANSFER;
+            if (mh.getCurrentState() == ServerEnum.State.REG) {
                 reg(bb);
             }
         }
     }
 
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        logger.info("Channel read complete, accum size - " + accumulator.readableBytes());
-        currentStateWaiting = ServerEnum.StateWaiting.COMPLETING;
-        if (currentState == ServerEnum.State.AUTH) auth(null);
-        if (currentState == ServerEnum.State.REG) reg(null);
+    private void idleDistributionByMethods(ByteBuf bb) {
+        request = ClientEnum.getRequestByValue(bb.readByte());
+        switch (request) {
+            case AUTH:
+                mh.setCurrentState(ServerEnum.State.AUTH);
+                break;
+            case REG:
+                mh.setCurrentState(ServerEnum.State.REG);
+                break;
+        }
+        mh.setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
     }
 
     @Override

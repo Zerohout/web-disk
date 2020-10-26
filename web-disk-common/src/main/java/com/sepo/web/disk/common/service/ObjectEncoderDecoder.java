@@ -15,15 +15,15 @@ public class ObjectEncoderDecoder {
         return Unpooled.wrappedBuffer(convertObjectToByteArray(obj));
     }
 
-    public static ByteBuf EncodeByteArraysToByteBuf(byte[]... arrs) {
+    public static ByteBuf EncodeByteArraysToByteBuf(byte[]... bytes) {
         var arrSize = 0;
 
-        for (var arr : arrs) arrSize += arr.length;
+        for (var arr : bytes) arrSize += arr.length;
 
         var out = new byte[arrSize];
-        for (int i = 0, k = 0; i < arrs.length; i++) {
-            for (var j = 0; j < arrs[i].length; j++, k++) {
-                out[k] = arrs[i][j];
+        for (int i = 0, k = 0; i < bytes.length; i++) {
+            for (var j = 0; j < bytes[i].length; j++, k++) {
+                out[k] = bytes[i][j];
             }
         }
         return Unpooled.wrappedBuffer(out);
