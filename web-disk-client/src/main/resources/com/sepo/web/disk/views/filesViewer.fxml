@@ -17,17 +17,14 @@
         <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <!--Client downloaded files-->
             <TreeView fx:id="filesTView" maxHeight="Infinity" maxWidth="Infinity" editable="true"
-
-                      prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
-                      />
+                      prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"/>
             <VBox spacing="5">
                 <Button fx:id="refreshBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
                         VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#refreshBtnAction"/>
                 <Button fx:id="addBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
                         VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#addBtnAction"/>
-                <Button fx:id="downloadBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30"
-                        minHeight="30"
-                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
+                <Button fx:id="downloadBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#downloadBtnAction"/>
                 <Button fx:id="deleteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
                         VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#deleteBtnAction"/>
                 <Button fx:id="moveBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"

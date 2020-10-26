@@ -1,11 +1,11 @@
 package com.sepo.web.disk.client.handlers;
 
-import com.sepo.web.disk.client.Helpers.MainHelper;
-import com.sepo.web.disk.client.Helpers.OnActionCallback;
+import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.util.ReferenceCounted;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +26,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     public void onErrorConnectionAction() {
         logger.info("Error connection");
-        MainHelper.setSignInErrorControls("Can't connected to server. Please try again.", true, true);
+        MainBridge.setSignInErrorControls("Can't connected to server. Please try again.", true, true);
         ctx.close();
     }
 
@@ -52,7 +52,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("Channel Active");
         accumulator = ctx.alloc().buffer(1024 * 1024, 1024 * 1024 * 25);
-        MainHelper.setSignInErrorControls("", false, false);
+        MainBridge.setSignInErrorControls("", false, false);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                 Network.authHandler = null;
 
             }
-            MainHelper.giveAuthResult(operationResult);
+            MainBridge.giveAuthResult(operationResult);
             resetStateToIDLE();
             return;
         }
@@ -95,7 +95,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
             bb.release();
         }
         if (currentStateWaiting == ClientEnum.StateWaiting.COMPLETING) {
-            MainHelper.giveRegResult(operationResult);
+            MainBridge.giveRegResult(operationResult);
             resetStateToIDLE();
         }
     }
@@ -200,6 +200,13 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     public void sendRequest(ClientEnum.Request request, ClientEnum.RequestType requestType) {
 
+    }
+    public void send(ByteBuf bb, boolean isFlush) {
+        if (isFlush) {
+            ctx.writeAndFlush(bb);
+        } else {
+            ctx.write(bb);
+        }
     }
 
     public void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {

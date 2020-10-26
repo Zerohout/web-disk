@@ -1,34 +1,29 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.client.ClientApp;
-import com.sepo.web.disk.client.Helpers.MainHelper;
-import com.sepo.web.disk.common.models.ClientEnum;
-import com.sepo.web.disk.common.models.FileInfo;
-import com.sepo.web.disk.common.models.Folder;
-import com.sepo.web.disk.common.models.ServerEnum;
-import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
+import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
+import com.sepo.web.disk.client.Helpers.MainBridge;
+import com.sepo.web.disk.common.models.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.DefaultFileRegion;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
+import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.initTreeViews;
+import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.setBtnIcon;
+import static com.sepo.web.disk.common.helpers.MainHelper.SERVER_FOLDER_NAME;
 
 public class ServerFilesController extends FilesController implements Initializable {
     private static final Logger logger = LogManager.getLogger(ServerFilesController.class);
@@ -37,7 +32,7 @@ public class ServerFilesController extends FilesController implements Initializa
 
     public ServerFilesController() {
         super(true);
-        MainHelper.setServerFilesController(this);
+        MainBridge.setServerFilesController(this);
     }
 
     @Override
@@ -60,8 +55,8 @@ public class ServerFilesController extends FilesController implements Initializa
 
     private void sendRefreshRequest() {
         logger.info("send REFRESH request");
-        MainHelper.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
-        MainHelper.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
+        MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        MainBridge.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
     }
 
 //    @FXML
@@ -84,47 +79,63 @@ public class ServerFilesController extends FilesController implements Initializa
         var chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
         if (chosenFiles == null) return;
         var filesList = new ArrayList<>(chosenFiles);
+        var fileInfoList = new ArrayList<FileInfo>();
         for (var file : filesList) {
-            sendFile(file);
+            fileInfoList.add(new FileInfo(file.toPath()));
+        }
+        for (var fileInfo : fileInfoList) {
+            sendFileToServer(fileInfo);
         }
         refreshBtn.fire();
     }
 
-    private void sendFile(File file) {
+    private FileInfo getFileInfoDestination(FileInfo newFileInfo) {
+        var out = new FileInfo();
+        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
+            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
+            if (selectedFileInfo.isFolder()) {
+                out.setAbsolutePath(selectedFileInfo.getAbsolutePath()+"\\"+newFileInfo.getName());
+            } else {
+                out.setAbsolutePath(selectedFileInfo.getAbsolutePath().replace(selectedFileInfo.getName(), newFileInfo.getName()));
+            }
+        } else {
+            out.setAbsolutePath(SERVER_FOLDER_NAME);
+        }
+        return out;
+    }
+
+    @FXML
+    public void downloadBtnAction(ActionEvent actionEvent) {
+
+    }
+
+    public void sendFileToServer(FileInfo fileInfo) {
         ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
-        MainHelper.sendByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), false);
-        packAndSendObj(new FileInfo(file.toPath()));
+        MainBridge.sendMainHandlerByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), true);
+        fileInfo.setNewValue(getFileInfoDestination(fileInfo));
+        MainBridge.packAndSendObj(fileInfo);
+        var file = fileInfo.getPath().toFile();
         try {
             var region = new DefaultFileRegion(file, 0, Files.size(file.toPath()));
-            MainHelper.sendByteBuf(region, true);
+            MainBridge.sendMainHandlerByteBuf(region, true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void packAndSendObj(Object object) {
-        var fileInfoBB = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
-        var fileInfoSize = fileInfoBB.readableBytes();
-        var sizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
-        sizeBB.writeInt(fileInfoSize);
-        MainHelper.sendByteBuf(sizeBB, false);
-        MainHelper.sendByteBuf(fileInfoBB, true);
-    }
+
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
-        MainHelper.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
+        MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.DELETE.getValue());
-        MainHelper.sendByteBuf(req, false);
-        var selectedFilesInfo = filesTView.getSelectionModel().getSelectedItems()
-                .parallelStream()
-                .map(TreeItem::getValue)
-                .collect(Collectors.toCollection(ArrayList::new));
-        packAndSendObj(selectedFilesInfo);
+        MainBridge.sendMainHandlerByteBuf(req, false);
+        MainBridge.packAndSendObj(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
         refreshBtn.fire();
     }
+
 
     @FXML
     public void cancelBtnAction(ActionEvent actionEvent) {
@@ -144,14 +155,12 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @Override
     public void renameFile(FileInfo oldValue, FileInfo newValue) {
-        logger.info("renaming. oldValue - "+oldValue.getAbsolutePath()+", new value - "+newValue.getAbsolutePath());
-
         oldValue.setNewValue(newValue);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.RENAME.getValue());
-        MainHelper.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
-        MainHelper.sendByteBuf(req, false);
-        packAndSendObj(oldValue);
+        MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
+        MainBridge.sendMainHandlerByteBuf(req, false);
+        MainBridge.packAndSendObj(oldValue);
     }
 }

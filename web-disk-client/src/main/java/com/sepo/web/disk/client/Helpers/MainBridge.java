@@ -1,16 +1,11 @@
 package com.sepo.web.disk.client.Helpers;
 
-import com.sepo.web.disk.client.controllers.ClientFilesController;
-import com.sepo.web.disk.client.controllers.ServerFilesController;
-import com.sepo.web.disk.client.controllers.SignInController;
-import com.sepo.web.disk.client.controllers.SignUpController;
-import com.sepo.web.disk.client.handlers.MainHandler;
+import com.sepo.web.disk.client.controllers.*;
 import com.sepo.web.disk.client.network.Network;
-import com.sepo.web.disk.common.models.ClientEnum;
-import com.sepo.web.disk.common.models.Folder;
-import com.sepo.web.disk.common.models.ServerEnum;
-import com.sepo.web.disk.common.models.User;
+import com.sepo.web.disk.common.models.*;
+import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCounted;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
@@ -18,18 +13,19 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.refreshTView;
-
-public class MainHelper {
-    private static final Logger logger = LogManager.getLogger(MainHelper.class);
+public class MainBridge {
+    private static final Logger logger = LogManager.getLogger(MainBridge.class);
     private static ClientFilesController clientFilesController;
     private static ServerFilesController serverFilesController;
     private static SignInController signInController;
     private static SignUpController signUpController;
 
     public static void refreshServerFiles(Folder folder) {
-        Platform.runLater(() -> refreshTView(serverFilesController.getFilesTView(), folder));
+        Platform.runLater(() -> ControlPropertiesHelper.refreshTView(serverFilesController.getFilesTView(), folder));
+    }
 
+    public static void refreshServerFiles() {
+        serverFilesController.getRefreshBtn().fire();
     }
 
     public static void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {
@@ -48,42 +44,41 @@ public class MainHelper {
 
     public static void sendUserToServer(User user) {
         Network.authHandler.sendUserData(user);
-
     }
 
     public static void setSignInErrorControls(String errorText, boolean isErrorVisible, boolean isRefreshConnBtnVisible) {
-        if(signInController == null) return;
+        if (signInController == null) return;
         Platform.runLater(() -> signInController.setErrorControls(errorText, isErrorVisible, isRefreshConnBtnVisible));
     }
 
     public static void giveAuthResult(ServerEnum.Respond respond) {
-        if(signInController == null) return;
+        if (signInController == null) return;
         Platform.runLater(() -> signInController.respondToAuthResult(respond));
         logger.info("regController - " + signUpController);
-
     }
-    public static void giveRegResult(ServerEnum.Respond respond){
+
+    public static void giveRegResult(ServerEnum.Respond respond) {
         Platform.runLater(() -> signUpController.respondToAuthResult(respond));
     }
 
-    public static void giveRenameResult(ServerEnum.Respond result){
+    public static void giveRenameResult(ServerEnum.Respond result) {
         Platform.runLater(() -> clientFilesController.respondToRenameResult(result));
     }
 
     public static void setClientFilesController(ClientFilesController clientFilesController) {
-        MainHelper.clientFilesController = clientFilesController;
+        MainBridge.clientFilesController = clientFilesController;
     }
 
     public static void setServerFilesController(ServerFilesController serverFilesController) {
-        MainHelper.serverFilesController = serverFilesController;
+        MainBridge.serverFilesController = serverFilesController;
     }
 
     public static void setSignInController(SignInController signInController) {
-        MainHelper.signInController = signInController;
+        MainBridge.signInController = signInController;
     }
 
     public static void setSignUpController(SignUpController signUpController) {
-        MainHelper.signUpController = signUpController;
+        MainBridge.signUpController = signUpController;
     }
 
     public static void connectToServer() {
@@ -98,7 +93,33 @@ public class MainHelper {
         }
     }
 
-    public static void sendByteBuf(ReferenceCounted bb, boolean isFlush){
-        Network.mainHandler.send(bb,isFlush);
+    public static void sendMainHandlerByteBuf(ReferenceCounted bb, boolean isFlush) {
+        Network.mainHandler.send(bb, isFlush);
+    }
+
+    public static void sendAuthHandlerByteBuf(ByteBuf bb, boolean isFLush) {
+        Network.authHandler.send(bb, isFLush);
+    }
+
+    public static void sendFile(FileInfo fileInfo) {
+        serverFilesController.sendFileToServer(fileInfo);
+    }
+
+    public static void packAndSendObj(Object object) {
+        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
+        var msgSize = msg.readableBytes();
+        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        msgSizeBB.writeInt(msgSize);
+        sendMainHandlerByteBuf(msgSizeBB, false);
+        sendMainHandlerByteBuf(msg, true);
+    }
+
+    public static void authPackAndSendObj(Object object) {
+        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
+        var msgSize = msg.readableBytes();
+        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        msgSizeBB.writeInt(msgSize);
+        sendAuthHandlerByteBuf(msgSizeBB, false);
+        sendAuthHandlerByteBuf(msg, true);
     }
 }

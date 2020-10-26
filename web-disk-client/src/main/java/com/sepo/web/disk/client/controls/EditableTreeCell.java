@@ -32,7 +32,6 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         var selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
-        filesController.getAddBtn().setDisable(selectedItemsCount > 1);
         filesController.getDownloadBtn().setDisable(selectedItemsCount == 0);
     }
 
@@ -93,7 +92,6 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         editedFileInfo.setName(textField.getText());
         var oldPath = getFileInfo().getAbsolutePath();
         oldPath = oldPath.replace(getFileInfo().getName(),"") + textField.getText();
-        //oldPah += textField.getText();
         editedFileInfo.setAbsolutePath(oldPath);
 
         filesController.renameFile(getFileInfo(), editedFileInfo);

@@ -3,6 +3,8 @@ package com.sepo.web.disk.client.controllers;
 import com.sepo.web.disk.client.ClientApp;
 import com.sepo.web.disk.client.Helpers.*;
 import com.sepo.web.disk.common.models.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,7 +14,6 @@ import javafx.scene.input.KeyEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -36,7 +37,7 @@ public class SignInController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        MainHelper.setSignInController(this);
+        MainBridge.setSignInController(this);
     }
 
     @FXML
@@ -54,8 +55,10 @@ public class SignInController implements Initializable {
 
     @FXML
     public void signInAction(ActionEvent actionEvent) {
-        MainHelper.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
-        MainHelper.sendUserToServer(new User(signInEmailTField.getText(), signInPassPField.getText()));
+        MainBridge.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
+        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.AUTH.getValue()), true);
+        MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
     }
 
     public void passPFieldAction(KeyEvent keyEvent) {
@@ -74,7 +77,7 @@ public class SignInController implements Initializable {
 
 
     public void refreshConnectionAction(ActionEvent actionEvent) {
-        var connection = new Thread(MainHelper::connectToServer);
+        var connection = new Thread(MainBridge::connectToServer);
         connection.setDaemon(true);
         Platform.runLater(connection::start);
     }

@@ -1,11 +1,8 @@
 package com.sepo.web.disk.client.handlers;
 
-import com.sepo.web.disk.client.Helpers.MainHelper;
-import com.sepo.web.disk.client.Helpers.OnActionCallback;
-import com.sepo.web.disk.client.controllers.ServerFilesController;
+import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.client.network.Network;
 import com.sepo.web.disk.common.models.ClientEnum;
-import com.sepo.web.disk.common.models.FileInfo;
 import com.sepo.web.disk.common.models.Folder;
 import com.sepo.web.disk.common.models.ServerEnum;
 import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
@@ -15,9 +12,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCounted;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.File;
-import java.util.ArrayList;
 
 public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
@@ -46,7 +40,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             accumulator.retain().release();
             currentState = ClientEnum.State.IDLE;
             currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
-            MainHelper.refreshServerFiles(folder);
+            MainBridge.refreshServerFiles(folder);
         }
     }
 
@@ -64,7 +58,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         if(currentState == ClientEnum.State.IDLE && currentStateWaiting == ClientEnum.StateWaiting.RESULT){
         logger.info("got result");
             var respond = ServerEnum.getRespondByValue(((ByteBuf)msg).readByte());
-            MainHelper.giveRenameResult(respond);
+            MainBridge.giveRenameResult(respond);
             ((ByteBuf)msg).release();
             currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
         }
