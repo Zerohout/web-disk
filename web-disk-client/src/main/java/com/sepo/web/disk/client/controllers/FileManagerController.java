@@ -12,7 +12,6 @@ import java.util.ResourceBundle;
 
 public class FileManagerController implements Initializable{
     private static final Logger logger = LogManager.getLogger(FileManagerController.class);
-//    private ObservableList<FileInfo> clientFiles = FXCollections.observableArrayList();
 
 
     public FileManagerController() throws IOException {

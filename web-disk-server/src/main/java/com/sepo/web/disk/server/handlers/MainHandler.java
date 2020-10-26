@@ -7,6 +7,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.DefaultFileRegion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,6 +53,9 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (mh.getCurrentState() == ServerEnum.State.GETTING) {
                 getFiles(bb);
             }
+            if(mh.getCurrentState() == ServerEnum.State.SENDING){
+                sendFiles(bb);
+            }
             if (mh.getCurrentState() == ServerEnum.State.DELETING) {
                 deleteFiles(bb);
             }
@@ -75,6 +79,11 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                 mh.setCurrentState(ServerEnum.State.GETTING)
                         .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
                 break;
+            case SEND:
+                logger.info("SEND request");
+                mh.setCurrentState(ServerEnum.State.SENDING)
+                        .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
+                break;
             case OPERATION:
                 logger.info("OPERATION request");
                 switch (ClientEnum.getRequestTypeByValue(bb.readByte())) {
@@ -91,6 +100,41 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                 }
         }
     }
+
+    //region Sending files
+    private void sendFiles(ByteBuf bb){
+        logger.info("sendFiles");
+        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE){
+            mh.setObjectSize(bb);
+        }
+        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT){
+            mh.setObject(bb);
+        }
+
+        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
+            var fileInfoList = (ArrayList<FileInfo>) mh.getReceivedObj();
+            logger.info("send files - "+fileInfoList.size());
+            for(var fileInfo : fileInfoList){
+                sendFile(fileInfo);
+            }
+        }
+    }
+
+    private void sendFile(FileInfo fileInfo){
+        //mh.sendRespond(ServerEnum.Respond.GET);
+        var newFI = new FileInfo(Path.of(fileInfo.getAbsolutePath()));
+        newFI.setNewValue(fileInfo.getNewValue());
+        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(newFI);
+        var msgSize = msg.readableBytes();
+        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        msgSizeBB.writeInt(msgSize);
+        mh.getCtx().write(msgSizeBB);
+        mh.getCtx().writeAndFlush(msg);
+        var region = new DefaultFileRegion(newFI.getPath().toFile(), 0, newFI.getSize());
+        mh.getCtx().writeAndFlush(region);
+    }
+
+    //endregion
 
     //region Getting file
     private void getFiles(ByteBuf bb) {
@@ -182,7 +226,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             var result = oldFile.renameTo(new File(fileInfo.getNewValue().getAbsolutePath()))
                     ? ServerEnum.Respond.SUCCESS
                     : ServerEnum.Respond.FAILURE;
-            mh.sendResult(result);
+            mh.sendRespond(result);
             idleDistributionByMethods(bb);
         }
 

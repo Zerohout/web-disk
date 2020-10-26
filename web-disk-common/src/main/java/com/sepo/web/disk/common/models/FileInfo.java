@@ -52,8 +52,9 @@ public class FileInfo implements Sendable {
         return this.absolutePath;
     }
 
-    public void setAbsolutePath(String absolutePath){
+    public FileInfo setAbsolutePath(String absolutePath){
         this.absolutePath = absolutePath;
+        return this;
     }
 
     public long getSize() {

@@ -4,6 +4,7 @@ import com.sepo.web.disk.client.ClientApp;
 import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
 import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.*;
+import io.netty.buffer.ByteBufAllocator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -48,6 +49,31 @@ public class ClientFilesController extends FilesController implements Initializa
         refreshBtn.fire();
     }
 
+    public void getFilesFromServer(ArrayList<FileInfo> fileInfoList) {
+        String destinationPath;
+        MainBridge.setGettingFilesCount(fileInfoList.size());
+        for (var fileInfo : fileInfoList) {
+            if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
+                var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
+                if (selectedFileInfo.isFolder()) {
+                    destinationPath = selectedFileInfo.getPath().resolve(fileInfo.getName()).toString();
+                } else {
+                    destinationPath = selectedFileInfo.getPath().getParent().resolve(fileInfo.getName()).toString();
+                }
+            } else {
+                destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().resolve(fileInfo.getName()).toString();
+            }
+            fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
+        }
+
+        var bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        bb.writeByte(ClientEnum.Request.SEND.getValue());
+
+        MainBridge.setState(ClientEnum.State.GETTING, ClientEnum.StateWaiting.OBJECT_SIZE);
+        MainBridge.sendMainHandlerByteBuf(bb, false);
+        MainBridge.packAndSendObj(fileInfoList);
+    }
+
     public void respondToRenameResult(ServerEnum.Respond result) {
         refreshBtn.fire();
     }
@@ -56,7 +82,7 @@ public class ClientFilesController extends FilesController implements Initializa
     public void downloadBtnAction(ActionEvent actionEvent) {
         var selectedItems = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
         for (var fileInfo : selectedItems) {
-            MainBridge.sendFile(fileInfo);
+            MainBridge.sendFilesToServer(fileInfo);
         }
         MainBridge.refreshServerFiles();
     }
@@ -102,14 +128,14 @@ public class ClientFilesController extends FilesController implements Initializa
         if (chosenFiles == null) return;
         var files = new ArrayList<>(chosenFiles);
         Path destinationPath;
-        if(filesTView.getSelectionModel().getSelectedItems().size() == 1){
+        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
             var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
             if (selectedFileInfo.isFolder()) {
                 destinationPath = selectedFileInfo.getPath();
             } else {
                 destinationPath = selectedFileInfo.getPath().getParent();
             }
-        }else {
+        } else {
             destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath();
         }
         try {

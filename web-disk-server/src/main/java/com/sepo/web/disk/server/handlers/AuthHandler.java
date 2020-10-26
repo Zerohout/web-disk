@@ -1,7 +1,6 @@
 package com.sepo.web.disk.server.handlers;
 
 import com.sepo.web.disk.common.models.*;
-import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import com.sepo.web.disk.server.database.Database;
 import com.sepo.web.disk.server.helpers.MainHelper;
 import io.netty.buffer.ByteBuf;
@@ -70,7 +69,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                 mh.getCtx().pipeline().remove(this);
                 mh.getCtx().pipeline().addLast(new MainHandler(mh));
             }
-            mh.sendResult(result);
+            mh.sendRespond(result);
         }
 
     }
@@ -87,7 +86,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                     ? ServerEnum.Respond.SUCCESS
                     : ServerEnum.Respond.FAILURE;
 
-            mh.sendResult(result);
+            mh.sendRespond(result);
         }
     }
 

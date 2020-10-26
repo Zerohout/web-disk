@@ -8,9 +8,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCounted;
 import javafx.application.Platform;
+import javafx.scene.control.TreeView;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 public class MainBridge {
@@ -26,6 +28,9 @@ public class MainBridge {
 
     public static void refreshServerFiles() {
         serverFilesController.getRefreshBtn().fire();
+    }
+    public static void refreshClientFiles(){
+        Platform.runLater(() -> clientFilesController.getRefreshBtn().fire());
     }
 
     public static void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {
@@ -101,8 +106,12 @@ public class MainBridge {
         Network.authHandler.send(bb, isFLush);
     }
 
-    public static void sendFile(FileInfo fileInfo) {
+    public static void sendFilesToServer(FileInfo fileInfo) {
         serverFilesController.sendFileToServer(fileInfo);
+    }
+
+    public static void getFilesFromServer(ArrayList<FileInfo> fileInfo) {
+        clientFilesController.getFilesFromServer(fileInfo);
     }
 
     public static void packAndSendObj(Object object) {
@@ -121,5 +130,9 @@ public class MainBridge {
         msgSizeBB.writeInt(msgSize);
         sendAuthHandlerByteBuf(msgSizeBB, false);
         sendAuthHandlerByteBuf(msg, true);
+    }
+
+    public static void setGettingFilesCount(int count){
+        Network.mainHandler.setGettingFilesCount(count);
     }
 }

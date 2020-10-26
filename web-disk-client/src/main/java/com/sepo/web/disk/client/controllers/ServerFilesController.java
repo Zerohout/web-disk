@@ -18,11 +18,11 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.initTreeViews;
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.setBtnIcon;
+import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
 import static com.sepo.web.disk.common.helpers.MainHelper.SERVER_FOLDER_NAME;
 
 public class ServerFilesController extends FilesController implements Initializable {
@@ -83,6 +83,7 @@ public class ServerFilesController extends FilesController implements Initializa
         for (var file : filesList) {
             fileInfoList.add(new FileInfo(file.toPath()));
         }
+
         for (var fileInfo : fileInfoList) {
             sendFileToServer(fileInfo);
         }
@@ -106,10 +107,11 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void downloadBtnAction(ActionEvent actionEvent) {
-
+        MainBridge.getFilesFromServer(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
     }
 
     public void sendFileToServer(FileInfo fileInfo) {
+        MainBridge.setState(ClientEnum.State.GETTING, ClientEnum.StateWaiting.OBJECT_SIZE);
         ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
         MainBridge.sendMainHandlerByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), true);
         fileInfo.setNewValue(getFileInfoDestination(fileInfo));

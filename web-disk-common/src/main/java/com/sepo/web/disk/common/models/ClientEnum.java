@@ -30,7 +30,10 @@ public class ClientEnum implements Sendable {
         RESULT((byte) 12), // IDLE, AUTH, REG
         RESPOND((byte) 13),
         TRANSFER((byte) 14),
-        COMPLETING((byte) 15);
+        COMPLETING((byte) 15),
+        OBJECT_SIZE((byte) 16),
+        OBJECT((byte) 17),
+        FILE((byte)18);
 
         private byte value;
 
