@@ -117,6 +117,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             for(var fileInfo : fileInfoList){
                 sendFile(fileInfo);
             }
+            mh.clearStage();
         }
     }
 
@@ -132,6 +133,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         mh.getCtx().writeAndFlush(msg);
         var region = new DefaultFileRegion(newFI.getPath().toFile(), 0, newFI.getSize());
         mh.getCtx().writeAndFlush(region);
+        logger.info("file is sent");
     }
 
     //endregion
@@ -152,7 +154,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     .setExpectedBytes(fileInfo.getSize());
 
             var path = fileInfo.getNewValue().getAbsolutePath();
-            if (path.equals(SERVER_FOLDER_NAME)) {
+            if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
                 path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
             }
             try {

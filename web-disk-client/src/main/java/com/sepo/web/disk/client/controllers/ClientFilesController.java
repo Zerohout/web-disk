@@ -49,41 +49,31 @@ public class ClientFilesController extends FilesController implements Initializa
         refreshBtn.fire();
     }
 
-    public void getFilesFromServer(ArrayList<FileInfo> fileInfoList) {
-        String destinationPath;
+    public void downloadFiles(ArrayList<FileInfo> fileInfoList) {
+        MainBridge.setState(ClientEnum.State.GETTING, ClientEnum.StateWaiting.OBJECT_SIZE);
         MainBridge.setGettingFilesCount(fileInfoList.size());
-        for (var fileInfo : fileInfoList) {
-            if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
-                var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
-                if (selectedFileInfo.isFolder()) {
-                    destinationPath = selectedFileInfo.getPath().resolve(fileInfo.getName()).toString();
-                } else {
-                    destinationPath = selectedFileInfo.getPath().getParent().resolve(fileInfo.getName()).toString();
-                }
-            } else {
-                destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().resolve(fileInfo.getName()).toString();
-            }
-            fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
-        }
+
+        fileInfoList.forEach(f -> {
+            var destinationPath = getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
+            f.setNewValue(new FileInfo().setAbsolutePath(destinationPath + "\\" + f.getName()));
+        });
 
         var bb = ByteBufAllocator.DEFAULT.directBuffer(1);
         bb.writeByte(ClientEnum.Request.SEND.getValue());
 
-        MainBridge.setState(ClientEnum.State.GETTING, ClientEnum.StateWaiting.OBJECT_SIZE);
         MainBridge.sendMainHandlerByteBuf(bb, false);
-        MainBridge.packAndSendObj(fileInfoList);
+        MainBridge.mainPackAndSendObj(fileInfoList);
     }
 
-    public void respondToRenameResult(ServerEnum.Respond result) {
-        refreshBtn.fire();
-    }
+//    public void respondToRenameResult(ServerEnum.Respond result) {
+//        refreshBtn.fire();
+//    }
 
     @FXML
     public void downloadBtnAction(ActionEvent actionEvent) {
         var selectedItems = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
-        for (var fileInfo : selectedItems) {
-            MainBridge.sendFilesToServer(fileInfo);
-        }
+        MainBridge.uploadFiles(selectedItems);
+
         MainBridge.refreshServerFiles();
     }
 
@@ -127,19 +117,9 @@ public class ClientFilesController extends FilesController implements Initializa
         var chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
         if (chosenFiles == null) return;
         var files = new ArrayList<>(chosenFiles);
-        Path destinationPath;
-        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
-            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
-            if (selectedFileInfo.isFolder()) {
-                destinationPath = selectedFileInfo.getPath();
-            } else {
-                destinationPath = selectedFileInfo.getPath().getParent();
-            }
-        } else {
-            destinationPath = Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath();
-        }
         try {
             for (var file : files) {
+                var destinationPath = Path.of(getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString()));
                 Files.copy(file.toPath(), destinationPath.resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {

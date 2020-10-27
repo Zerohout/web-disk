@@ -74,7 +74,8 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (currentState == ClientEnum.State.IDLE && currentStateWaiting == ClientEnum.StateWaiting.RESULT) {
                 logger.info("got result");
                 var respond = ServerEnum.getRespondByValue(bb.readByte());
-                MainBridge.giveRenameResult(respond);
+                //MainBridge.giveRenameResult(respond);
+                MainBridge.refreshClientFiles();
                 bb.release();
                 currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
             }
@@ -97,7 +98,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void getFileInfoSize(ByteBuf bb) {
-        logger.info("getting obj size");
+        logger.info("getting obj size, expectedBytes - "+expectedBytes);
         if (expectedBytes == 0L) expectedBytes = 4L;
         while (bb.readableBytes() > 0 && receivedBytes != expectedBytes) {
             accumulator.writeByte(bb.readByte());
@@ -105,7 +106,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         }
         if (receivedBytes == expectedBytes) {
             expectedBytes = accumulator.readInt();
-            logger.info(expectedBytes);
+            logger.info("expected bytes - "+expectedBytes);
             accumulator.retain().release();
             receivedBytes = 0L;
             currentStateWaiting = ClientEnum.StateWaiting.OBJECT;
@@ -119,17 +120,16 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             receivedBytes++;
         }
         if (receivedBytes == expectedBytes) {
-
             receivedFileInfo = (FileInfo) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
             expectedBytes = receivedFileInfo.getSize();
             receivedBytes = 0L;
             accumulator.retain().release();
+            currentStateWaiting = ClientEnum.StateWaiting.FILE;
             try {
                 bos = new BufferedOutputStream(new FileOutputStream(receivedFileInfo.getNewValue().getAbsolutePath()));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            currentStateWaiting = ClientEnum.StateWaiting.FILE;
         }
     }
 
@@ -142,14 +142,16 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             gettingFilesCount--;
             bos.close();
             if (gettingFilesCount == 0) {
+                logger.info("all files received");
                 currentState = ClientEnum.State.IDLE;
                 currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
                 MainBridge.refreshClientFiles();
             } else {
+                logger.info("file received, remained - "+gettingFilesCount);
                 currentStateWaiting = ClientEnum.StateWaiting.OBJECT_SIZE;
-                receivedBytes = 0L;
-                expectedBytes = 0L;
             }
+            receivedBytes = 0L;
+            expectedBytes = 0L;
         }
     }
 

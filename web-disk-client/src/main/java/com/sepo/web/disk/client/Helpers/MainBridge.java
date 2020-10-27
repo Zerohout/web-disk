@@ -8,7 +8,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCounted;
 import javafx.application.Platform;
-import javafx.scene.control.TreeView;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,10 +46,6 @@ public class MainBridge {
         }
     }
 
-    public static void sendUserToServer(User user) {
-        Network.authHandler.sendUserData(user);
-    }
-
     public static void setSignInErrorControls(String errorText, boolean isErrorVisible, boolean isRefreshConnBtnVisible) {
         if (signInController == null) return;
         Platform.runLater(() -> signInController.setErrorControls(errorText, isErrorVisible, isRefreshConnBtnVisible));
@@ -66,9 +61,9 @@ public class MainBridge {
         Platform.runLater(() -> signUpController.respondToAuthResult(respond));
     }
 
-    public static void giveRenameResult(ServerEnum.Respond result) {
-        Platform.runLater(() -> clientFilesController.respondToRenameResult(result));
-    }
+//    public static void giveRenameResult(ServerEnum.Respond result) {
+//        Platform.runLater(() -> clientFilesController.respondToRenameResult(result));
+//    }
 
     public static void setClientFilesController(ClientFilesController clientFilesController) {
         MainBridge.clientFilesController = clientFilesController;
@@ -106,15 +101,15 @@ public class MainBridge {
         Network.authHandler.send(bb, isFLush);
     }
 
-    public static void sendFilesToServer(FileInfo fileInfo) {
-        serverFilesController.sendFileToServer(fileInfo);
+    public static void uploadFiles(ArrayList<FileInfo> fileInfoList) {
+        serverFilesController.uploadFiles(fileInfoList);
     }
 
-    public static void getFilesFromServer(ArrayList<FileInfo> fileInfo) {
-        clientFilesController.getFilesFromServer(fileInfo);
+    public static void downloadFiles(ArrayList<FileInfo> fileInfoList) {
+        clientFilesController.downloadFiles(fileInfoList);
     }
 
-    public static void packAndSendObj(Object object) {
+    public static void mainPackAndSendObj(Object object) {
         var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
         var msgSize = msg.readableBytes();
         var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);

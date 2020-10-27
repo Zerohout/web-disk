@@ -100,4 +100,19 @@ public class ControlPropertiesHelper {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public static String getDestinationPath(TreeView<FileInfo> filesTView, String defaultDestination) {
+        String destinationPath;
+        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
+            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
+            if (selectedFileInfo.isFolder()) {
+                destinationPath = selectedFileInfo.getAbsolutePath();
+            } else {
+                destinationPath = selectedFileInfo.getAbsolutePath().replace(selectedFileInfo.getName(), "");
+            }
+        } else {
+            destinationPath = defaultDestination;
+        }
+        return destinationPath;
+    }
+
 }
