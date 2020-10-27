@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sepo.web.disk.client.controllers.PassfieldController"
+      alignment="CENTER" fillHeight="false" minHeight="-Infinity"
+      VBox.vgrow="NEVER">
+    VBox.vgrow="NEVER">
+    <StackPane HBox.hgrow="ALWAYS">
+        <PasswordField fx:id="signInPassPField" alignment="CENTER" onKeyReleased="#passPFieldAction"/>
+        <TextField fx:id="signInPassTField" alignment="CENTER" visible="false" onKeyReleased="#passTFieldAction"/>
+    </StackPane>
+    <Button fx:id="signInShowPassBtn" disable="true" minHeight="-Infinity" onAction="#showPassAction"
+            styleClass="show-pass-button" text="show"/>
+</HBox>

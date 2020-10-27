@@ -10,7 +10,9 @@ import io.netty.channel.DefaultFileRegion;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeView;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +40,9 @@ public class ServerFilesController extends FilesController implements Initializa
         initButtons();
         initTreeViews(filesTView, this);
         sendRefreshRequest();
+        var downTT = new Tooltip();
+        downTT.setText("Download selected files from server");
+        downloadBtn.setTooltip(downTT);
     }
 
     private void initButtons() {
@@ -109,6 +114,7 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
+        if(deleteBtn.isDisable()) return;
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
@@ -120,11 +126,13 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void cancelBtnAction(ActionEvent actionEvent) {
+        if(cancelBtn.isDisable()) return;
         filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
     public void refreshBtnAction(ActionEvent actionEvent) {
+        if(refreshBtn.isDisable()) return;
         sendRefreshRequest();
     }
 

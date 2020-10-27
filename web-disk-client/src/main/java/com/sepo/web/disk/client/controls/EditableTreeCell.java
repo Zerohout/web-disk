@@ -59,9 +59,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
         filesController.getDownloadBtn().setDisable(selectedItemsCount == 0);
-        if(getItem() != null) {
-            this.setContextMenu(createContextMenu(this));
-        }
+
     }
 
 
@@ -82,6 +80,11 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
                 setText(getFileName());
                 setGraphic(getGraphics());
             }
+        }
+        if(getItem() != null) {
+            this.setContextMenu(createContextMenu(this));
+        }else{
+            this.setContextMenu(null);
         }
     }
 
@@ -149,7 +152,9 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         download.setOnAction(actionEvent -> filesController.getDownloadBtn().fire());
         var delete = new MenuItem("Delete");
         delete.setOnAction(actionEvent -> filesController.getDeleteBtn().fire());
-        cm.getItems().addAll(refresh, download, delete);
+        var cancel = new MenuItem("Cancel");
+        cancel.setOnAction(actionEvent -> filesController.getCancelBtn().fire());
+        cm.getItems().addAll(refresh, download, delete, cancel);
         return cm;
     }
 }

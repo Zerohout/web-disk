@@ -5,7 +5,10 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.nio.file.Files;
 
@@ -41,6 +44,19 @@ public abstract class FilesController {
     public FilesController(boolean isServerFilesController) {
         this.isServerFilesController = isServerFilesController;
         currentOperation = Operation.IDLE;
+    }
+
+    @FXML
+    public void TViewKeyReleasedAction(KeyEvent keyEvent){
+        if(keyEvent.getCode() == KeyCode.DELETE){
+            deleteBtn.fire();
+        }
+        if(keyEvent.getCode() == KeyCode.ESCAPE){
+            cancelBtn.fire();
+        }
+        if(keyEvent.getCode() == KeyCode.F5){
+            refreshBtn.fire();
+        }
     }
 
     public Button getRefreshBtn() {

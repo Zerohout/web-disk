@@ -8,6 +8,10 @@ import io.netty.buffer.ByteBufAllocator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,6 +88,9 @@ public class ClientFilesController extends FilesController implements Initializa
         initButtons();
         initTreeViews(filesTView, this);
         clientFolder = refreshTView(filesTView, clientFolder);
+        var downTT = new Tooltip();
+        downTT.setText("Upload selected files to server");
+        downloadBtn.setTooltip(downTT);
     }
 
     private void initButtons() {
@@ -129,16 +136,19 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void cancelBtnAction(ActionEvent actionEvent) {
+        if(cancelBtn.isDisable()) return;
         filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
     public void refreshBtnAction(ActionEvent actionEvent) {
+        if(refreshBtn.isDisable()) return;
         clientFolder = refreshTView(filesTView, clientFolder);
     }
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
+        if(deleteBtn.isDisable()) return;
         var selectedFilesInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
         try {
             for (var fileInfo : selectedFilesInfo) {

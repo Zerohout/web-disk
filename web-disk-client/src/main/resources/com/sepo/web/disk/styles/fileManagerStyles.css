@@ -38,3 +38,17 @@
     -fx-wrap-text: true;
     -fx-text-alignment: center;
 }
+
+.tooltip{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 20px;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
+
+.context-menu{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
