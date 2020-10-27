@@ -30,15 +30,9 @@ public abstract class FilesController {
     @FXML
     protected Button deleteBtn;
     @FXML
-    protected Button moveBtn;
-    @FXML
-    protected Button acceptBtn;
-    @FXML
     protected Button cancelBtn;
     @FXML
     protected TreeView<FileInfo> filesTView;
-    @FXML
-    public abstract void refreshBtnAction(ActionEvent actionEvent);
     @FXML
     protected Label titleLbl;
 
@@ -63,14 +57,6 @@ public abstract class FilesController {
 
     public Button getDeleteBtn() {
         return deleteBtn;
-    }
-
-    public Button getMoveBtn() {
-        return moveBtn;
-    }
-
-    public Button getAcceptBtn() {
-        return acceptBtn;
     }
 
     public Button getCancelBtn() {

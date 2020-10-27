@@ -57,6 +57,7 @@ public class ControlPropertiesHelper {
     public static void initTreeViews(TreeView<FileInfo> treeView, FilesController filesController) {
         treeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         treeView.setCellFactory(fileInfoTreeView -> new EditableTreeCell(filesController));
+
     }
 
     public static Folder refreshTView(TreeView<FileInfo> treeView, Folder folder) {
@@ -114,5 +115,7 @@ public class ControlPropertiesHelper {
         }
         return destinationPath;
     }
+
+
 
 }

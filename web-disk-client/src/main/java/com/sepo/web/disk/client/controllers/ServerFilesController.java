@@ -45,8 +45,6 @@ public class ServerFilesController extends FilesController implements Initializa
         setBtnIcon("add", addBtn);
         setBtnIcon("downFromServer", downloadBtn);
         setBtnIcon("delete", deleteBtn);
-        setBtnIcon("move", moveBtn);
-        setBtnIcon("accept", acceptBtn);
         setBtnIcon("cancel", cancelBtn);
     }
 
@@ -126,7 +124,6 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     @FXML
-    @Override
     public void refreshBtnAction(ActionEvent actionEvent) {
         sendRefreshRequest();
     }

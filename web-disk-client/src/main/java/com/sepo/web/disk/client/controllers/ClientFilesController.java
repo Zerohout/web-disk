@@ -91,8 +91,6 @@ public class ClientFilesController extends FilesController implements Initializa
         setBtnIcon("add", addBtn);
         setBtnIcon("downToServer", downloadBtn);
         setBtnIcon("delete", deleteBtn);
-        setBtnIcon("move", moveBtn);
-        setBtnIcon("accept", acceptBtn);
         setBtnIcon("cancel", cancelBtn);
     }
 
@@ -135,7 +133,6 @@ public class ClientFilesController extends FilesController implements Initializa
     }
 
     @FXML
-    @Override
     public void refreshBtnAction(ActionEvent actionEvent) {
         clientFolder = refreshTView(filesTView, clientFolder);
     }

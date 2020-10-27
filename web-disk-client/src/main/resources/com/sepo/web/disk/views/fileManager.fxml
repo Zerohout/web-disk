@@ -9,19 +9,6 @@
 <VBox prefHeight="600" prefWidth="600" spacing="10" stylesheets="@../styles/fileManagerStyles.css"
       xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.sepo.web.disk.client.controllers.FileManagerController">
-    <MenuBar styleClass="menu-bar">
-        <Menu text="File">
-            <MenuItem text="Open client dir"/>
-            <MenuItem text="Exit"/>
-        </Menu>
-        <Menu text="Options">
-            <MenuItem text="Open settings"/>
-        </Menu>
-        <Menu text="Help">
-            <MenuItem text="About"/>
-        </Menu>
-    </MenuBar>
-
     <HBox alignment="CENTER" spacing="3" VBox.vgrow="ALWAYS">
         <ClientFilesControl/>
         <Separator orientation="VERTICAL"/>

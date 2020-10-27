@@ -1,8 +1,9 @@
 package com.sepo.web.disk.client.controls;
 
-import com.sepo.web.disk.client.controllers.ClientFilesController;
 import com.sepo.web.disk.client.controllers.FilesController;
 import com.sepo.web.disk.common.models.FileInfo;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.image.ImageView;
@@ -11,18 +12,43 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.nio.file.Path;
 
 public class EditableTreeCell extends TreeCell<FileInfo> {
     private static final Logger logger = LogManager.getLogger(EditableTreeCell.class);
     private TextField textField;
+    EditableTreeCell onMouseItem;
+    Path destinationPath;
+
 
     private FilesController filesController;
 
     public EditableTreeCell(FilesController filesController) {
         this.filesController = filesController;
+
+        setOnMouseEntered(event -> {
+            onMouseItem = (EditableTreeCell) event.getTarget();
+            onMouseItem.getStyleClass().add("selected-tree-cell");
+            if (onMouseItem.getFileName().equals("")) return;
+            var fileInfo = onMouseItem.getFileInfo();
+            if (fileInfo.isFolder()) {
+                destinationPath = Path.of(fileInfo.getAbsolutePath());
+            } else {
+                destinationPath = Path.of(fileInfo.getAbsolutePath()).getParent();
+            }
+
+        });
+
+        setOnMouseExited(event -> {
+            onMouseItem = (EditableTreeCell) event.getTarget();
+            onMouseItem.getStyleClass().remove("selected-tree-cell");
+        });
+
     }
+
+
+
+
 
     @Override
     public void updateSelected(boolean b) {
@@ -33,7 +59,11 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
         filesController.getDownloadBtn().setDisable(selectedItemsCount == 0);
+        if(getItem() != null) {
+            this.setContextMenu(createContextMenu(this));
+        }
     }
+
 
     @Override
     protected void updateItem(FileInfo fileInfo, boolean empty) {
@@ -91,7 +121,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         var editedFileInfo = new FileInfo();
         editedFileInfo.setName(textField.getText());
         var oldPath = getFileInfo().getAbsolutePath();
-        oldPath = oldPath.replace(getFileInfo().getName(),"") + textField.getText();
+        oldPath = oldPath.replace(getFileInfo().getName(), "") + textField.getText();
         editedFileInfo.setAbsolutePath(oldPath);
 
         filesController.renameFile(getFileInfo(), editedFileInfo);
@@ -108,6 +138,19 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
 
     private FileInfo getFileInfo() {
         return getItem() == null ? new FileInfo() : getItem();
+    }
+
+    private ContextMenu createContextMenu(TreeCell<FileInfo> treeCell){
+        ContextMenu cm = new ContextMenu();
+        var refresh = new MenuItem("Refresh");
+        refresh.setOnAction(actionEvent -> filesController.getRefreshBtn().fire());
+        var download = new MenuItem(filesController.isServerFilesController()
+                ? "Download" : "Upload");
+        download.setOnAction(actionEvent -> filesController.getDownloadBtn().fire());
+        var delete = new MenuItem("Delete");
+        delete.setOnAction(actionEvent -> filesController.getDeleteBtn().fire());
+        cm.getItems().addAll(refresh, download, delete);
+        return cm;
     }
 }
 
