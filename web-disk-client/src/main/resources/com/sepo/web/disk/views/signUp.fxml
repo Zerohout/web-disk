@@ -16,30 +16,36 @@
     <VBox spacing="10">
         <Label text="E-mail"
                styleClass="field-description-label"/>
-        <TextField fx:id="sighUpEmailTField"/>
+        <TextField fx:id="signUpEmailTField" onKeyReleased="#textFieldAction"/>
 
         <Label text="Repeat e-mail"
                styleClass="field-description-label"/>
-        <TextField fx:id="signUpRepEmailTField"/>
+        <TextField fx:id="signUpRepEmailTField" onKeyReleased="#textFieldAction"/>
 
         <Label text="Password"
                styleClass="field-description-label"/>
         <HBox alignment="CENTER" spacing="5">
-            <PasswordField fx:id="signUpPassPField" HBox.hgrow="ALWAYS"/>
-            <Button text="show" styleClass="show-pass-button" onAction="#showSignUpPFieldAction"/>
+            <StackPane HBox.hgrow="ALWAYS">
+            <PasswordField fx:id="signUpPassPField" alignment="CENTER" onKeyReleased="#passPFieldAction"/>
+            <TextField fx:id="signUpPassTField" alignment="CENTER"  visible="false" onKeyReleased="#textFieldAction"/>
+            </StackPane>
+            <Button fx:id="signUpShowPassBtn" disable="true" text="show" styleClass="show-pass-button" maxWidth="Infinity" onAction="#showSignUpPFieldAction"/>
         </HBox>
 
         <Label text="Repeat password"
                styleClass="field-description-label"/>
         <HBox alignment="CENTER" spacing="5">
-            <PasswordField fx:id="signUpRepPassPField" HBox.hgrow="ALWAYS"/>
-            <Button text="show" styleClass="show-pass-button" onAction="#showSignUpRepPassPFieldAction"/>
+            <StackPane HBox.hgrow="ALWAYS">
+            <PasswordField fx:id="signUpRepPassPField" alignment="CENTER" onKeyReleased="#passRepPFieldAction"/>
+            <TextField fx:id="signUpRepPassTField" alignment="CENTER"  visible="false" onKeyReleased="#textFieldAction"/>
+            </StackPane>
+            <Button fx:id="signUpShowRepPassBtn" text="show" disable="true" styleClass="show-pass-button" onAction="#showSignUpRepPassPFieldAction"/>
         </HBox>
 
         <Label fx:id="errorLbl" styleClass="error-label" visible="false"/>
         <Label fx:id="successLbl" styleClass="success-label" visible="false"/>
 
-        <Button text="Sign up"
+        <Button fx:id="signUpBtn" text="Sign up" disable="true"
                 onAction="#signUpAction" maxWidth="Infinity"/>
         <Button text="Back" onAction="#backAction" maxWidth="Infinity"/>
     </VBox>

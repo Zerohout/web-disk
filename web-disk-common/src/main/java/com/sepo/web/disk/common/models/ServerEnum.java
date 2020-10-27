@@ -12,7 +12,8 @@ public class ServerEnum {
         SENDING((byte) -5), // file_info, file
         GETTING((byte) -6), // file_info, file, file_tree, state
         DELETING((byte) -7),
-        RENAMING((byte) -8);
+        RENAMING((byte) -8),
+        CREATING((byte) - 9);
 
         private final byte value;
 

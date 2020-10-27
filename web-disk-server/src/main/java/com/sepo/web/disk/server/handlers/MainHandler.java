@@ -23,7 +23,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
 
     private BufferedOutputStream bos;
-    private MainHelper mh;
+    private final MainHelper mh;
 
     public MainHandler(MainHelper mh) {
         this.mh = mh;
@@ -53,7 +53,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (mh.getCurrentState() == ServerEnum.State.GETTING) {
                 getFiles(bb);
             }
-            if(mh.getCurrentState() == ServerEnum.State.SENDING){
+            if (mh.getCurrentState() == ServerEnum.State.SENDING) {
                 sendFiles(bb);
             }
             if (mh.getCurrentState() == ServerEnum.State.DELETING) {
@@ -62,8 +62,12 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (mh.getCurrentState() == ServerEnum.State.RENAMING) {
                 renameFile(bb);
             }
+            if (mh.getCurrentState() == ServerEnum.State.CREATING) {
+                createFolder(bb);
+            }
         }
     }
+
 
     // распределение ByteBuff по методом в состоянии IDLE
     private void idleDistributionByMethods(ByteBuf bb) {
@@ -97,32 +101,33 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                         mh.setCurrentState(ServerEnum.State.RENAMING)
                                 .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
                         break;
+                    case CREATE:
+                        logger.info("\t CREATE requestType");
+                        mh.setCurrentState(ServerEnum.State.CREATING)
+                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
+                        break;
                 }
         }
     }
 
-    //region Sending files
-    private void sendFiles(ByteBuf bb){
-        logger.info("sendFiles");
-        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE){
-            mh.setObjectSize(bb);
-        }
-        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT){
-            mh.setObject(bb);
-        }
 
-        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
+
+    //region Sending files
+    private void sendFiles(ByteBuf bb) {
+        logger.info("sendFiles");
+        getObject(bb);
+
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var fileInfoList = (ArrayList<FileInfo>) mh.getReceivedObj();
-            logger.info("send files - "+fileInfoList.size());
-            for(var fileInfo : fileInfoList){
+            logger.info("send files - " + fileInfoList.size());
+            for (var fileInfo : fileInfoList) {
                 sendFile(fileInfo);
             }
             mh.clearStage();
         }
     }
 
-    private void sendFile(FileInfo fileInfo){
-        //mh.sendRespond(ServerEnum.Respond.GET);
+    private void sendFile(FileInfo fileInfo) {
         var newFI = new FileInfo(Path.of(fileInfo.getAbsolutePath()));
         newFI.setNewValue(fileInfo.getNewValue());
         var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(newFI);
@@ -135,18 +140,12 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         mh.getCtx().writeAndFlush(region);
         logger.info("file is sent");
     }
-
     //endregion
 
     //region Getting file
     private void getFiles(ByteBuf bb) {
         logger.info("getFiles");
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var fileInfo = (FileInfo) mh.getReceivedObj();
             mh.setCurrentState(ServerEnum.State.GETTING)
@@ -190,13 +189,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     //region Deleting files
     private void deleteFiles(ByteBuf bb) {
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
-
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var deletingList = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
             for (var fileInfo : deletingList) {
@@ -215,12 +208,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     //region Renaming file
     private void renameFile(ByteBuf bb) {
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var fileInfo = (FileInfo) mh.getReceivedObj();
             var oldFile = new File(fileInfo.getAbsolutePath());
@@ -236,6 +224,24 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
     //endregion
 
+    //region Creating folder
+    private void createFolder(ByteBuf bb) {
+        getObject(bb);
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
+            var fileInfo = (FileInfo) mh.getReceivedObj();
+            var path = fileInfo.getNewValue().getAbsolutePath();
+            if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
+                path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
+            }
+            try {
+                Files.createDirectory(new File(path).toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    //endregion
+
     //region Refreshing
     private void refresh() {
         var dir = new Folder(new FileInfo(mh.getUserFilesPath()), SERVER_FOLDER_NAME);
@@ -248,7 +254,14 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     //endregion
 
     //region Service methods
-
+    private void getObject(ByteBuf bb) {
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
+            mh.setObjectSize(bb);
+        }
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
+            mh.setObject(bb);
+        }
+    }
     //endregion
 
     @Override

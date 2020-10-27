@@ -20,8 +20,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     EditableTreeCell onMouseItem;
     Path destinationPath;
 
-
-    private FilesController filesController;
+    private final FilesController filesController;
 
     public EditableTreeCell(FilesController filesController) {
         this.filesController = filesController;
@@ -36,7 +35,6 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
             } else {
                 destinationPath = Path.of(fileInfo.getAbsolutePath()).getParent();
             }
-
         });
 
         setOnMouseExited(event -> {
@@ -46,20 +44,20 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
 
     }
 
-
-
-
-
     @Override
     public void updateSelected(boolean b) {
         super.updateSelected(b);
-        if (filesController.getCurrentOperation() != FilesController.Operation.IDLE) return;
 
         var selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
         filesController.getDownloadBtn().setDisable(selectedItemsCount == 0);
-
+        filesController.getCopyBtn().setDisable(filesController.getCurrentOperation() != FilesController.Operation.IDLE ||
+                selectedItemsCount == 0);
+        filesController.getCutBtn().setDisable(filesController.getCurrentOperation() != FilesController.Operation.IDLE ||
+                selectedItemsCount == 0);
+        filesController.getPasteBtn().setDisable(filesController.getCurrentOperation() != FilesController.Operation.COPYING &&
+                filesController.getCurrentOperation() != FilesController.Operation.CUTTING);
     }
 
 
@@ -81,10 +79,10 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
                 setGraphic(getGraphics());
             }
         }
-        if(getItem() != null) {
-            this.setContextMenu(createContextMenu(this));
-        }else{
-            this.setContextMenu(null);
+        if (getItem() != null) {
+            this.setContextMenu(createContextMenu());
+        } else {
+            this.setContextMenu(createNullItemContextMenu());
         }
     }
 
@@ -143,18 +141,71 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         return getItem() == null ? new FileInfo() : getItem();
     }
 
-    private ContextMenu createContextMenu(TreeCell<FileInfo> treeCell){
+    private ContextMenu createContextMenu() {
         ContextMenu cm = new ContextMenu();
+
         var refresh = new MenuItem("Refresh");
         refresh.setOnAction(actionEvent -> filesController.getRefreshBtn().fire());
+        cm.getItems().add(refresh);
+        var add = new MenuItem("Add");
+        add.setOnAction(actionEvent -> filesController.getAddBtn().fire());
+        if (!filesController.getAddBtn().isDisable()) {
+            cm.getItems().add(add);
+        }
+        var addFolder = new MenuItem("Add folder");
+        addFolder.setOnAction(actionEvent -> filesController.getAddFolderBtn().fire());
+        if (!filesController.getAddFolderBtn().isDisable()) {
+            cm.getItems().add(addFolder);
+        }
         var download = new MenuItem(filesController.isServerFilesController()
                 ? "Download" : "Upload");
         download.setOnAction(actionEvent -> filesController.getDownloadBtn().fire());
+        if (!filesController.getDownloadBtn().isDisable()) {
+            cm.getItems().add(download);
+        }
+        var copy = new MenuItem("Copy");
+        copy.setOnAction(actionEvent -> filesController.getCopyBtn().fire());
+        if (!filesController.getCopyBtn().isDisable()) {
+            cm.getItems().add(copy);
+        }
+        var cut = new MenuItem("Cut");
+        cut.setOnAction(actionEvent -> filesController.getCutBtn().fire());
+        if (!filesController.getCutBtn().isDisable()) {
+            cm.getItems().add(cut);
+        }
+        var paste = new MenuItem("Paste");
+        paste.setOnAction(actionEvent -> filesController.getPasteBtn().fire());
+        if (!filesController.getPasteBtn().isDisable()) {
+            cm.getItems().add(paste);
+        }
         var delete = new MenuItem("Delete");
         delete.setOnAction(actionEvent -> filesController.getDeleteBtn().fire());
+        if (!filesController.getDeleteBtn().isDisable()) {
+            cm.getItems().add(delete);
+        }
         var cancel = new MenuItem("Cancel");
         cancel.setOnAction(actionEvent -> filesController.getCancelBtn().fire());
-        cm.getItems().addAll(refresh, download, delete, cancel);
+        if (!filesController.getCancelBtn().isDisable()) {
+            cm.getItems().add(cancel);
+        }
+        return cm;
+    }
+
+    private ContextMenu createNullItemContextMenu() {
+        ContextMenu cm = new ContextMenu();
+        var refresh = new MenuItem("Refresh");
+        refresh.setOnAction(actionEvent -> filesController.getRefreshBtn().fire());
+        cm.getItems().add(refresh);
+        var add = new MenuItem("Add");
+        add.setOnAction(actionEvent -> filesController.getAddBtn().fire());
+        if (!filesController.getAddBtn().isDisable()) {
+            cm.getItems().add(add);
+        }
+        var addFolder = new MenuItem("Add folder");
+        addFolder.setOnAction(actionEvent -> filesController.getAddFolderBtn().fire());
+        if (!filesController.getAddFolderBtn().isDisable()) {
+            cm.getItems().add(addFolder);
+        }
         return cm;
     }
 }

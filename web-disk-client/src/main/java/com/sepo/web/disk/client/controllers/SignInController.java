@@ -53,14 +53,6 @@ public class SignInController implements Initializable {
         ControlPropertiesHelper.setPassControlsProp(signInPassTField, signInPassPField, signInShowPassBtn);
     }
 
-    @FXML
-    public void signInAction(ActionEvent actionEvent) {
-        MainBridge.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
-        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
-        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.AUTH.getValue()), true);
-        MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
-    }
-
     public void passPFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.passPFieldControlProp(signInPassPField, signInShowPassBtn);
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);
@@ -70,6 +62,16 @@ public class SignInController implements Initializable {
     public void passTFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);
     }
+
+    @FXML
+    public void signInAction(ActionEvent actionEvent) {
+        MainBridge.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
+        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.AUTH.getValue()), true);
+        MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
+    }
+
+
 
     public void emailTFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);

@@ -61,10 +61,6 @@ public class MainBridge {
         Platform.runLater(() -> signUpController.respondToAuthResult(respond));
     }
 
-//    public static void giveRenameResult(ServerEnum.Respond result) {
-//        Platform.runLater(() -> clientFilesController.respondToRenameResult(result));
-//    }
-
     public static void setClientFilesController(ClientFilesController clientFilesController) {
         MainBridge.clientFilesController = clientFilesController;
     }
