@@ -74,7 +74,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (currentState == ClientEnum.State.IDLE && currentStateWaiting == ClientEnum.StateWaiting.RESULT) {
                 logger.info("got result");
                 var respond = ServerEnum.getRespondByValue(bb.readByte());
-                //MainBridge.giveRenameResult(respond);
                 MainBridge.refreshClientFiles();
                 bb.release();
                 currentStateWaiting = ClientEnum.StateWaiting.NOTHING;

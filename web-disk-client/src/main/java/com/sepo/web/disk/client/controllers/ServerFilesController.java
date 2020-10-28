@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
@@ -76,7 +77,7 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void refreshBtnAction(ActionEvent actionEvent) {
-        if(refreshBtn.isDisable()) return;
+        if (refreshBtn.isDisable()) return;
         sendRefreshRequest();
     }
 
@@ -87,7 +88,7 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
-        if(deleteBtn.isDisable()) return;
+        if (deleteBtn.isDisable()) return;
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
@@ -98,15 +99,14 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     @FXML
-    public void addFolderBtnAction(ActionEvent actionEvent){
-        if(addFolderBtn.isDisable()) return;
+    public void addFolderBtnAction(ActionEvent actionEvent) {
+        if (addFolderBtn.isDisable()) return;
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.CREATE.getValue());
         MainBridge.sendMainHandlerByteBuf(req, false);
 
-        var fileInfo = new FileInfo();
-        fileInfo.setName("New_Folder_"+getRandomFolderNumber());
+        var fileInfo = new FileInfo().setName("New_Folder_" + getRandomFolderNumber());
         var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
         fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
         MainBridge.mainPackAndSendObj(fileInfo);
@@ -114,24 +114,50 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     @FXML
-    public void copyBtnAction(ActionEvent actionEvent){
-
+    public void copyBtnAction(ActionEvent actionEvent) {
+        currentOperation = Operation.COPYING;
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
-    public void cutBtnAction(ActionEvent actionEvent){
-
+    public void cutBtnAction(ActionEvent actionEvent) {
+        currentOperation = Operation.CUTTING;
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
-    public void pasteBtnAction(ActionEvent actionEvent){
-
+    public void pasteBtnAction(ActionEvent actionEvent) {
+        ByteBuf req;
+        req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        req.writeByte(ClientEnum.Request.OPERATION.getValue());
+        if (currentOperation == Operation.COPYING) {
+            req.writeByte(ClientEnum.RequestType.COPY.getValue());
+        }
+        if(currentOperation == Operation.CUTTING){
+            req.writeByte(ClientEnum.RequestType.CUT.getValue());
+        }
+        for (var fileInfo : copyingOrCuttingFileInfoList) {
+            var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\";
+            fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
+            logger.info("file - " + fileInfo.getAbsolutePath() + " to - " + destinationPath);
+        }
+        MainBridge.sendMainHandlerByteBuf(req, false);
+        MainBridge.mainPackAndSendObj(copyingOrCuttingFileInfoList);
+        MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        copyingOrCuttingFileInfoList.clear();
+        currentOperation = Operation.IDLE;
+        if (!pasteBtn.isDisable()) pasteBtn.setDisable(true);
     }
 
     @FXML
     public void cancelBtnAction(ActionEvent actionEvent) {
-        if(cancelBtn.isDisable()) return;
+        if (cancelBtn.isDisable()) return;
         filesTView.getSelectionModel().clearSelection();
+        copyingOrCuttingFileInfoList.clear();
+        if(currentOperation != Operation.IDLE) currentOperation = Operation.IDLE;
+        if(!pasteBtn.isDisable()) pasteBtn.setDisable(true);
     }
 
     @Override

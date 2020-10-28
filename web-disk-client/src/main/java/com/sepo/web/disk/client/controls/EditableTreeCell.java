@@ -42,12 +42,17 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
             onMouseItem.getStyleClass().remove("selected-tree-cell");
         });
 
+        setOnKeyReleased(event ->{
+            if(event.isControlDown() && event.getCode() == KeyCode.X){
+
+            }
+        });
+
     }
 
     @Override
     public void updateSelected(boolean b) {
         super.updateSelected(b);
-
         var selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
@@ -58,6 +63,8 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
                 selectedItemsCount == 0);
         filesController.getPasteBtn().setDisable(filesController.getCurrentOperation() != FilesController.Operation.COPYING &&
                 filesController.getCurrentOperation() != FilesController.Operation.CUTTING);
+
+
     }
 
 

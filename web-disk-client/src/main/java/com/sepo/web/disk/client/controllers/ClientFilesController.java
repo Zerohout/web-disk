@@ -119,18 +119,35 @@ public class ClientFilesController extends FilesController implements Initializa
     @FXML
     public void copyBtnAction(ActionEvent actionEvent){
         currentOperation = Operation.COPYING;
-        refreshBtn.fire();
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
     public void cutBtnAction(ActionEvent actionEvent){
         currentOperation = Operation.CUTTING;
-        refreshBtn.fire();
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
     public void pasteBtnAction(ActionEvent actionEvent){
+        for(var fileInfo : copyingOrCuttingFileInfoList){
+            var destinationPath = getDestinationPath(filesTView,Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
+            destinationPath += "\\" + fileInfo.getName();
+            try {
+                if(currentOperation == Operation.COPYING) {
+                    Files.copy(fileInfo.getPath(), Path.of(destinationPath), StandardCopyOption.REPLACE_EXISTING);
+                }
+                if(currentOperation == Operation.CUTTING){
+                    Files.move(fileInfo.getPath(), Path.of(destinationPath), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         currentOperation = Operation.IDLE;
+        copyingOrCuttingFileInfoList.clear();
         refreshBtn.fire();
         pasteBtn.setDisable(true);
     }
@@ -154,7 +171,9 @@ public class ClientFilesController extends FilesController implements Initializa
     public void cancelBtnAction(ActionEvent actionEvent) {
         if(cancelBtn.isDisable()) return;
         filesTView.getSelectionModel().clearSelection();
-        currentOperation = Operation.IDLE;
+        copyingOrCuttingFileInfoList.clear();
+        if(currentOperation != Operation.IDLE) currentOperation = Operation.IDLE;
+        if(!pasteBtn.isDisable()) pasteBtn.setDisable(true);
     }
 
     @Override

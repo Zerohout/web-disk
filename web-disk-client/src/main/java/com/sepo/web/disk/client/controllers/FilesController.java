@@ -10,9 +10,12 @@ import javafx.scene.input.KeyEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+
 public abstract class FilesController {
     private static final Logger logger = LogManager.getLogger(FilesController.class);
     protected Operation currentOperation;
+    protected ArrayList<FileInfo> copyingOrCuttingFileInfoList;
 
 
     public enum Operation {
@@ -49,6 +52,7 @@ public abstract class FilesController {
     public FilesController(boolean isServerFilesController) {
         this.isServerFilesController = isServerFilesController;
         currentOperation = Operation.IDLE;
+        copyingOrCuttingFileInfoList = new ArrayList<>();
     }
 
     @FXML

@@ -40,8 +40,9 @@ public class FileInfo implements Sendable {
 
     }
 
-    public void setName(String name) {
+    public FileInfo setName(String name) {
         this.name = name;
+        return this;
     }
 
     private void setIcon(String absolutePath) {
