@@ -31,9 +31,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private BufferedOutputStream bos;
     private int gettingFilesCount;
 
-
-//    private OnActionCallback callback;
-
     public MainHandler(ChannelHandlerContext ctx) {
         logger.info("mainHandler created");
         Network.mainHandler = this;
@@ -97,7 +94,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void getFileInfoSize(ByteBuf bb) {
-        logger.info("getting obj size, expectedBytes - "+expectedBytes);
         if (expectedBytes == 0L) expectedBytes = 4L;
         while (bb.readableBytes() > 0 && receivedBytes != expectedBytes) {
             accumulator.writeByte(bb.readByte());
@@ -105,7 +101,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         }
         if (receivedBytes == expectedBytes) {
             expectedBytes = accumulator.readInt();
-            logger.info("expected bytes - "+expectedBytes);
             accumulator.retain().release();
             receivedBytes = 0L;
             currentStateWaiting = ClientEnum.StateWaiting.OBJECT;
@@ -113,7 +108,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void getFileInfo(ByteBuf bb) {
-        logger.info("getting obj");
         while (bb.readableBytes() > 0 && receivedBytes != expectedBytes) {
             accumulator.writeByte(bb.readByte());
             receivedBytes++;
@@ -141,12 +135,10 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             gettingFilesCount--;
             bos.close();
             if (gettingFilesCount == 0) {
-                logger.info("all files received");
                 currentState = ClientEnum.State.IDLE;
                 currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
                 MainBridge.refreshClientFiles();
             } else {
-                logger.info("file received, remained - "+gettingFilesCount);
                 currentStateWaiting = ClientEnum.StateWaiting.OBJECT_SIZE;
             }
             receivedBytes = 0L;
@@ -157,7 +149,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        logger.info("got message complete");
         if (currentState == ClientEnum.State.REFRESHING) {
             currentStateWaiting = ClientEnum.StateWaiting.COMPLETING;
             refreshing(null);
@@ -166,7 +157,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-
     }
 
     public void sendRequest(ClientEnum.Request request, ClientEnum.RequestType requestType) {

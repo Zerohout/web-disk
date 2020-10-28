@@ -17,10 +17,10 @@ public abstract class FilesController {
     protected Operation currentOperation;
     protected ArrayList<FileInfo> copyingOrCuttingFileInfoList;
 
-
     public enum Operation {
         COPYING,
         CUTTING,
+        EDITING,
         IDLE
     }
 
@@ -60,20 +60,22 @@ public abstract class FilesController {
         if (keyEvent.getCode() == KeyCode.F5) {
             refreshBtn.fire();
         }
-        if (keyEvent.getCode() == KeyCode.DELETE) {
-            deleteBtn.fire();
-        }
-        if (keyEvent.getCode() == KeyCode.ESCAPE) {
-            cancelBtn.fire();
-        }
-        if(keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.C){
-            copyBtn.fire();
-        }
-        if(keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.X){
-            cutBtn.fire();
-        }
-        if(keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V){
-            pasteBtn.fire();
+        if(currentOperation != Operation.EDITING) {
+            if (keyEvent.getCode() == KeyCode.DELETE) {
+                deleteBtn.fire();
+            }
+            if (keyEvent.getCode() == KeyCode.ESCAPE) {
+                cancelBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.C) {
+                copyBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.X) {
+                cutBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V) {
+                pasteBtn.fire();
+            }
         }
     }
 
@@ -125,11 +127,10 @@ public abstract class FilesController {
         return currentOperation;
     }
 
-    public void setCurrentOperation(Operation currentOperation) {
-        this.currentOperation = currentOperation;
+    public void setCurrentOperation(Operation operation) {
+        this.currentOperation = operation;
     }
 
     public abstract void renameFile(FileInfo oldValue, FileInfo newValue);
-
 
 }

@@ -71,8 +71,6 @@ public class SignInController implements Initializable {
         MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
     }
 
-
-
     public void emailTFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);
     }
@@ -84,17 +82,14 @@ public class SignInController implements Initializable {
         Platform.runLater(connection::start);
     }
 
-    // среагировать на результат аутентификации
     public void respondToAuthResult(ServerEnum.Respond respond) {
         if (respond == ServerEnum.Respond.SUCCESS) {
             try {
-                logger.info("set scene to fileManager");
                 ClientApp.setScene("fileManager");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            logger.info("set error msg to UI");
             signInErrorLbl.setText("Error login or password.");
             signInErrorLbl.setVisible(true);
         }

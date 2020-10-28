@@ -41,13 +41,6 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
             onMouseItem = (EditableTreeCell) event.getTarget();
             onMouseItem.getStyleClass().remove("selected-tree-cell");
         });
-
-        setOnKeyReleased(event ->{
-            if(event.isControlDown() && event.getCode() == KeyCode.X){
-
-            }
-        });
-
     }
 
     @Override
@@ -63,10 +56,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
                 selectedItemsCount == 0);
         filesController.getPasteBtn().setDisable(filesController.getCurrentOperation() != FilesController.Operation.COPYING &&
                 filesController.getCurrentOperation() != FilesController.Operation.CUTTING);
-
-
     }
-
 
     @Override
     protected void updateItem(FileInfo fileInfo, boolean empty) {
@@ -96,6 +86,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     @Override
     public void startEdit() {
         super.startEdit();
+        filesController.setCurrentOperation(FilesController.Operation.EDITING);
         if (textField == null) {
             createTextField();
         }
@@ -112,6 +103,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         setText(getFileName());
         setGraphic(getGraphics());
         textField = null;
+        filesController.setCurrentOperation(FilesController.Operation.IDLE);
     }
 
     private void createTextField() {
@@ -134,6 +126,8 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
 
         filesController.renameFile(getFileInfo(), editedFileInfo);
         commitEdit(editedFileInfo);
+        filesController.setCurrentOperation(FilesController.Operation.IDLE);
+
     }
 
     private String getFileName() {

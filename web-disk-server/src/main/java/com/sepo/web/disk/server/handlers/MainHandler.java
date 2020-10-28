@@ -75,8 +75,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-
-    // распределение ByteBuff по методом в состоянии IDLE
     private void idleDistributionByMethods(ByteBuf bb) {
         if (bb.readableBytes() == 0) return;
         var req = ClientEnum.getRequestByValue(bb.readByte());
@@ -119,49 +117,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             }
         }
         mh.setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-
-//        switch (ClientEnum.getRequestByValue(bb.readByte())) {
-//            case REFRESH:
-//                logger.info("REFRESH request");
-//                bb.retain().release();
-//                refresh();
-//                break;
-//            case GET:
-//                logger.info("GET request");
-//                mh.setCurrentState(ServerEnum.State.GETTING)
-//                        .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                break;
-//            case SEND:
-//                logger.info("SEND request");
-//                mh.setCurrentState(ServerEnum.State.SENDING)
-//                        .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                break;
-//            case OPERATION:
-//                logger.info("OPERATION request");
-//                switch (ClientEnum.getRequestTypeByValue(bb.readByte())) {
-//                    case DELETE:
-//                        logger.info("\tDELETE requestType");
-//                        mh.setCurrentState(ServerEnum.State.DELETING)
-//                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                        break;
-//                    case RENAME:
-//                        logger.info("\tRENAME requestType");
-//                        mh.setCurrentState(ServerEnum.State.RENAMING)
-//                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                        break;
-//                    case CREATE:
-//                        logger.info("\t CREATE requestType");
-//                        mh.setCurrentState(ServerEnum.State.CREATING)
-//                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                        break;
-//                    case COPY:
-//                        logger.info("\t COPY requestType");
-//                        mh.setCurrentState(ServerEnum.State.COPYING)
-//                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-//                }
-//        }
     }
-
 
     //region Sending files
     private void sendFiles(ByteBuf bb) {

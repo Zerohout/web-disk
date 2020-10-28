@@ -41,7 +41,6 @@ public class ClientFilesController extends FilesController implements Initializa
             }
         }
         MainBridge.setClientFilesController(this);
-
     }
 
     @Override
@@ -113,8 +112,6 @@ public class ClientFilesController extends FilesController implements Initializa
         }
         refreshBtn.fire();
     }
-
-
 
     @FXML
     public void copyBtnAction(ActionEvent actionEvent){

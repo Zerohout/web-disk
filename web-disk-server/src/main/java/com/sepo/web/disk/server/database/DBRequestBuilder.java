@@ -2,6 +2,10 @@ package com.sepo.web.disk.server.database;
 
 import java.util.ArrayList;
 
+/**
+    LinqToSql analog
+ **/
+
 public class DBRequestBuilder {
     private final String SELECT = "SELECT";
     private final String FROM_DB = "FROM users";
@@ -160,9 +164,6 @@ public class DBRequestBuilder {
                 "\"email\" TEXT NOT NULL UNIQUE,"+
                 "\"password\" TEXT NOT NULL,"+
                 "PRIMARY KEY(\"id\" AUTOINCREMENT))";
-
     }
-
-
 }
 

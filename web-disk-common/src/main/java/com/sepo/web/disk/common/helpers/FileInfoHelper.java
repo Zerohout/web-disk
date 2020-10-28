@@ -5,7 +5,6 @@ import javafx.scene.image.Image;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
-import java.nio.file.Path;
 
 public class FileInfoHelper {
     public static Image setFileInfoIcon(String absolutePath) {

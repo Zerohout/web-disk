@@ -119,5 +119,4 @@ public class ControlPropertiesHelper {
         var rnd = new Random();
         return rnd.nextInt(Integer.MAX_VALUE-1);
     }
-
 }

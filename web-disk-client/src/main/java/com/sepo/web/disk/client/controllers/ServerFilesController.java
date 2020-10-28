@@ -5,7 +5,6 @@ import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
 import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.models.FileInfo;
-import com.sepo.web.disk.common.service.ObjectEncoderDecoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.DefaultFileRegion;
@@ -18,13 +17,9 @@ import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
@@ -141,7 +136,6 @@ public class ServerFilesController extends FilesController implements Initializa
         for (var fileInfo : copyingOrCuttingFileInfoList) {
             var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\";
             fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
-            logger.info("file - " + fileInfo.getAbsolutePath() + " to - " + destinationPath);
         }
         MainBridge.sendMainHandlerByteBuf(req, false);
         MainBridge.mainPackAndSendObj(copyingOrCuttingFileInfoList);
@@ -172,7 +166,6 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     private void sendRefreshRequest() {
-        logger.info("send REFRESH request");
         MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
         MainBridge.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
     }

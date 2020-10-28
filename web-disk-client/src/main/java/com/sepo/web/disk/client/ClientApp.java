@@ -13,10 +13,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
-
-/**
- * JavaFX App
- */
 public class ClientApp extends Application {
     private static final Logger logger = LogManager.getLogger(ClientApp.class);
     private static Scene scene;
@@ -37,7 +33,6 @@ public class ClientApp extends Application {
     public void stop() throws Exception {
         super.stop();
         Network.getInstance().stop();
-
     }
 
     public static void setRoot(String fxml) throws IOException {
@@ -47,7 +42,6 @@ public class ClientApp extends Application {
     public static void setScene(String fxml) throws IOException {
         scene = new Scene(loadFXML(fxml));
         stage.setScene(scene);
-        //stage.show();
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
@@ -57,12 +51,9 @@ public class ClientApp extends Application {
 
     public static void main(String[] args) {
         launch();
-
     }
 
     public static Stage getStage(){
         return stage;
     }
-
-
 }

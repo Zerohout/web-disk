@@ -14,13 +14,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class SignUpController implements Initializable {
-
+    private static final Logger logger = LogManager.getLogger(SignUpController.class);
     @FXML
     private Button signUpBtn;
     @FXML
@@ -87,7 +89,6 @@ public class SignUpController implements Initializable {
         MainBridge.setSignUpController(this);
     }
 
-
     @FXML
     public void showSignUpPFieldAction(ActionEvent actionEvent) {
         if (signUpPassPField.getText().isEmpty()) {
@@ -103,7 +104,6 @@ public class SignUpController implements Initializable {
         }
         ControlPropertiesHelper.setPassControlsProp(signUpRepPassTField, signUpRepPassPField, signUpShowRepPassBtn);
     }
-
 
     @FXML
     public void passPFieldAction(KeyEvent keyEvent) {

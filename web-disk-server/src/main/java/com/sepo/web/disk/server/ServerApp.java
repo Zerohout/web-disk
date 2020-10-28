@@ -13,7 +13,4 @@ public class ServerApp {
         Database.createUsersTable();
         Network.getInstance().start();
     }
-
-
-
 }
