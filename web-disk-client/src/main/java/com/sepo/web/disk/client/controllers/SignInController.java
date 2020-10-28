@@ -53,14 +53,6 @@ public class SignInController implements Initializable {
         ControlPropertiesHelper.setPassControlsProp(signInPassTField, signInPassPField, signInShowPassBtn);
     }
 
-    @FXML
-    public void signInAction(ActionEvent actionEvent) {
-        MainBridge.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
-        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
-        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.AUTH.getValue()), true);
-        MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
-    }
-
     public void passPFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.passPFieldControlProp(signInPassPField, signInShowPassBtn);
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);
@@ -69,6 +61,14 @@ public class SignInController implements Initializable {
 
     public void passTFieldAction(KeyEvent keyEvent) {
         ControlPropertiesHelper.signInBtnControlProp(signInBtn, signInEmailTField, signInPassPField, signInPassTField);
+    }
+
+    @FXML
+    public void signInAction(ActionEvent actionEvent) {
+        MainBridge.setState(ClientEnum.State.AUTH, ClientEnum.StateWaiting.RESULT);
+        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.AUTH.getValue()), true);
+        MainBridge.authPackAndSendObj(new User(signInEmailTField.getText(), signInPassPField.getText()));
     }
 
     public void emailTFieldAction(KeyEvent keyEvent) {
@@ -82,17 +82,14 @@ public class SignInController implements Initializable {
         Platform.runLater(connection::start);
     }
 
-    // среагировать на результат аутентификации
     public void respondToAuthResult(ServerEnum.Respond respond) {
         if (respond == ServerEnum.Respond.SUCCESS) {
             try {
-                logger.info("set scene to fileManager");
                 ClientApp.setScene("fileManager");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            logger.info("set error msg to UI");
             signInErrorLbl.setText("Error login or password.");
             signInErrorLbl.setVisible(true);
         }

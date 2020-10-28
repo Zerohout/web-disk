@@ -12,13 +12,12 @@ import javafx.scene.image.ImageView;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class ControlPropertiesHelper {
     public static final String CLIENT_FOLDER_PATH_NAME = "downloaded";
     public static final String CLIENT_FOLDER_NAME = "client_folder";
-
-    //public static Folder clientFolder;
 
     public static void setPassControlsProp(TextField passTField, PasswordField passPField, Button passShowBtn) {
         var passTFieldIsVisible = passTField.isVisible();
@@ -57,6 +56,7 @@ public class ControlPropertiesHelper {
     public static void initTreeViews(TreeView<FileInfo> treeView, FilesController filesController) {
         treeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         treeView.setCellFactory(fileInfoTreeView -> new EditableTreeCell(filesController));
+
     }
 
     public static Folder refreshTView(TreeView<FileInfo> treeView, Folder folder) {
@@ -100,4 +100,23 @@ public class ControlPropertiesHelper {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public static String getDestinationPath(TreeView<FileInfo> filesTView, String defaultDestination) {
+        String destinationPath;
+        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
+            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
+            if (selectedFileInfo.isFolder()) {
+                destinationPath = selectedFileInfo.getAbsolutePath();
+            } else {
+                destinationPath = selectedFileInfo.getAbsolutePath().replace(selectedFileInfo.getName(), "");
+            }
+        } else {
+            destinationPath = defaultDestination;
+        }
+        return destinationPath;
+    }
+
+    public static int getRandomFolderNumber(){
+        var rnd = new Random();
+        return rnd.nextInt(Integer.MAX_VALUE-1);
+    }
 }

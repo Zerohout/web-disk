@@ -1,6 +1,5 @@
 package com.sepo.web.disk.client.network;
 
-import com.sepo.web.disk.client.controllers.SignInController;
 import com.sepo.web.disk.client.handlers.MainHandler;
 import com.sepo.web.disk.client.handlers.AuthHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -20,16 +19,10 @@ public class Network {
     public static MainHandler mainHandler;
     private SocketChannel channel;
 
-
     private static Network ourInstance = new Network();
-
     public static Network getInstance() {
         return ourInstance;
     }
-
-    private Network() {
-    }
-
 
     public void start(CountDownLatch countDownLatch, CountDownLatch handlerLatch) {
         var group = new NioEventLoopGroup();
@@ -66,20 +59,6 @@ public class Network {
             }
         }
     }
-
-    public SocketChannel getChannel() {
-        return channel;
-    }
-
-    //
-//    public void setNetworkHandler() {
-//        this.networkHandler = new NetworkHandler();
-//    }
-//
-//    public NetworkHandler getNetworkHandler(){
-//        return this.networkHandler;
-//    }
-
 
      public void stop() {
         channel.close();

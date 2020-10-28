@@ -3,13 +3,15 @@ package com.sepo.web.disk.client.controllers;
 import com.sepo.web.disk.client.ClientApp;
 import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
 import com.sepo.web.disk.client.Helpers.MainBridge;
-import com.sepo.web.disk.common.models.*;
+import com.sepo.web.disk.common.models.ClientEnum;
+import com.sepo.web.disk.common.models.FileInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.DefaultFileRegion;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeView;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
@@ -21,14 +23,11 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.initTreeViews;
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.setBtnIcon;
+import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
 import static com.sepo.web.disk.common.helpers.MainHelper.SERVER_FOLDER_NAME;
 
 public class ServerFilesController extends FilesController implements Initializable {
     private static final Logger logger = LogManager.getLogger(ServerFilesController.class);
-
-    private Folder serverFolder;
 
     public ServerFilesController() {
         super(true);
@@ -41,36 +40,22 @@ public class ServerFilesController extends FilesController implements Initializa
         initButtons();
         initTreeViews(filesTView, this);
         sendRefreshRequest();
+        var downTT = new Tooltip();
+        downTT.setText("Download selected files from server");
+        downloadBtn.setTooltip(downTT);
     }
 
     private void initButtons() {
         setBtnIcon("refresh", refreshBtn);
         setBtnIcon("add", addBtn);
         setBtnIcon("downFromServer", downloadBtn);
+        setBtnIcon("addFolder", addFolderBtn);
+        setBtnIcon("copy", copyBtn);
+        setBtnIcon("cut", cutBtn);
+        setBtnIcon("paste", pasteBtn);
         setBtnIcon("delete", deleteBtn);
-        setBtnIcon("move", moveBtn);
-        setBtnIcon("accept", acceptBtn);
         setBtnIcon("cancel", cancelBtn);
     }
-
-    private void sendRefreshRequest() {
-        logger.info("send REFRESH request");
-        MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
-        MainBridge.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
-    }
-
-//    @FXML
-//    public void tViewDragOverAction(DragEvent dragEvent) {
-//    }
-//
-//    @FXML
-//    public void tViewDragDroppedAction(DragEvent dragEvent) {
-//
-//    }
-//
-//    @FXML
-//    public void tViewClickAction(MouseEvent mouseEvent) {
-//    }
 
     @FXML
     public void addBtnAction(ActionEvent actionEvent) {
@@ -80,77 +65,93 @@ public class ServerFilesController extends FilesController implements Initializa
         if (chosenFiles == null) return;
         var filesList = new ArrayList<>(chosenFiles);
         var fileInfoList = new ArrayList<FileInfo>();
-        for (var file : filesList) {
-            fileInfoList.add(new FileInfo(file.toPath()));
-        }
-        for (var fileInfo : fileInfoList) {
-            sendFileToServer(fileInfo);
-        }
+        filesList.forEach(file -> fileInfoList.add(new FileInfo(file.toPath())));
+        uploadFiles(fileInfoList);
         refreshBtn.fire();
     }
 
-    private FileInfo getFileInfoDestination(FileInfo newFileInfo) {
-        var out = new FileInfo();
-        if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
-            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
-            if (selectedFileInfo.isFolder()) {
-                out.setAbsolutePath(selectedFileInfo.getAbsolutePath()+"\\"+newFileInfo.getName());
-            } else {
-                out.setAbsolutePath(selectedFileInfo.getAbsolutePath().replace(selectedFileInfo.getName(), newFileInfo.getName()));
-            }
-        } else {
-            out.setAbsolutePath(SERVER_FOLDER_NAME);
-        }
-        return out;
+    @FXML
+    public void refreshBtnAction(ActionEvent actionEvent) {
+        if (refreshBtn.isDisable()) return;
+        sendRefreshRequest();
     }
 
     @FXML
     public void downloadBtnAction(ActionEvent actionEvent) {
-
+        MainBridge.downloadFiles(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
     }
-
-    public void sendFileToServer(FileInfo fileInfo) {
-        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
-        MainBridge.sendMainHandlerByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), true);
-        fileInfo.setNewValue(getFileInfoDestination(fileInfo));
-        MainBridge.packAndSendObj(fileInfo);
-        var file = fileInfo.getPath().toFile();
-        try {
-            var region = new DefaultFileRegion(file, 0, Files.size(file.toPath()));
-            MainBridge.sendMainHandlerByteBuf(region, true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
 
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
+        if (deleteBtn.isDisable()) return;
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         var req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.DELETE.getValue());
         MainBridge.sendMainHandlerByteBuf(req, false);
-        MainBridge.packAndSendObj(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        MainBridge.mainPackAndSendObj(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
         refreshBtn.fire();
     }
 
+    @FXML
+    public void addFolderBtnAction(ActionEvent actionEvent) {
+        if (addFolderBtn.isDisable()) return;
+        var req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        req.writeByte(ClientEnum.Request.OPERATION.getValue());
+        req.writeByte(ClientEnum.RequestType.CREATE.getValue());
+        MainBridge.sendMainHandlerByteBuf(req, false);
+
+        var fileInfo = new FileInfo().setName("New_Folder_" + getRandomFolderNumber());
+        var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
+        fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
+        MainBridge.mainPackAndSendObj(fileInfo);
+        refreshBtn.fire();
+    }
 
     @FXML
-    public void cancelBtnAction(ActionEvent actionEvent) {
+    public void copyBtnAction(ActionEvent actionEvent) {
+        currentOperation = Operation.COPYING;
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
         filesTView.getSelectionModel().clearSelection();
     }
 
     @FXML
-    @Override
-    public void refreshBtnAction(ActionEvent actionEvent) {
-        sendRefreshRequest();
+    public void cutBtnAction(ActionEvent actionEvent) {
+        currentOperation = Operation.CUTTING;
+        copyingOrCuttingFileInfoList.addAll(ControlPropertiesHelper.getSelectedFilesInfo(filesTView));
+        filesTView.getSelectionModel().clearSelection();
     }
 
+    @FXML
+    public void pasteBtnAction(ActionEvent actionEvent) {
+        ByteBuf req;
+        req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        req.writeByte(ClientEnum.Request.OPERATION.getValue());
+        if (currentOperation == Operation.COPYING) {
+            req.writeByte(ClientEnum.RequestType.COPY.getValue());
+        }
+        if(currentOperation == Operation.CUTTING){
+            req.writeByte(ClientEnum.RequestType.CUT.getValue());
+        }
+        for (var fileInfo : copyingOrCuttingFileInfoList) {
+            var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\";
+            fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
+        }
+        MainBridge.sendMainHandlerByteBuf(req, false);
+        MainBridge.mainPackAndSendObj(copyingOrCuttingFileInfoList);
+        MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        copyingOrCuttingFileInfoList.clear();
+        currentOperation = Operation.IDLE;
+        if (!pasteBtn.isDisable()) pasteBtn.setDisable(true);
+    }
 
-    public TreeView<FileInfo> getFilesTView() {
-        return filesTView;
+    @FXML
+    public void cancelBtnAction(ActionEvent actionEvent) {
+        if (cancelBtn.isDisable()) return;
+        filesTView.getSelectionModel().clearSelection();
+        copyingOrCuttingFileInfoList.clear();
+        if(currentOperation != Operation.IDLE) currentOperation = Operation.IDLE;
+        if(!pasteBtn.isDisable()) pasteBtn.setDisable(true);
     }
 
     @Override
@@ -161,6 +162,32 @@ public class ServerFilesController extends FilesController implements Initializa
         req.writeByte(ClientEnum.RequestType.RENAME.getValue());
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
         MainBridge.sendMainHandlerByteBuf(req, false);
-        MainBridge.packAndSendObj(oldValue);
+        MainBridge.mainPackAndSendObj(oldValue);
+    }
+
+    private void sendRefreshRequest() {
+        MainBridge.setState(ClientEnum.State.REFRESHING, ClientEnum.StateWaiting.TRANSFER);
+        MainBridge.sendMainHandlerRequest(ClientEnum.Request.REFRESH, null);
+    }
+
+    public void uploadFiles(ArrayList<FileInfo> fileInfoList) {
+        for (var fileInfo : fileInfoList) {
+            ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+            MainBridge.sendMainHandlerByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), false);
+            var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
+            fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
+            MainBridge.mainPackAndSendObj(fileInfo);
+            var file = fileInfo.getPath().toFile();
+            try {
+                var region = new DefaultFileRegion(file, 0, Files.size(file.toPath()));
+                MainBridge.sendMainHandlerByteBuf(region, true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public TreeView<FileInfo> getFilesTView() {
+        return filesTView;
     }
 }

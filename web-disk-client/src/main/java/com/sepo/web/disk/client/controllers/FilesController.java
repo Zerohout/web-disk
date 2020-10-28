@@ -1,23 +1,26 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.common.models.FileInfo;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Files;
-
-import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.refreshTView;
+import java.util.ArrayList;
 
 public abstract class FilesController {
+    private static final Logger logger = LogManager.getLogger(FilesController.class);
     protected Operation currentOperation;
+    protected ArrayList<FileInfo> copyingOrCuttingFileInfoList;
 
-
-
-    public enum Operation{
-        MOVING,
+    public enum Operation {
+        COPYING,
+        CUTTING,
+        EDITING,
         IDLE
     }
 
@@ -30,15 +33,17 @@ public abstract class FilesController {
     @FXML
     protected Button deleteBtn;
     @FXML
-    protected Button moveBtn;
+    protected Button addFolderBtn;
     @FXML
-    protected Button acceptBtn;
+    protected Button cutBtn;
+    @FXML
+    protected Button copyBtn;
+    @FXML
+    protected Button pasteBtn;
     @FXML
     protected Button cancelBtn;
     @FXML
     protected TreeView<FileInfo> filesTView;
-    @FXML
-    public abstract void refreshBtnAction(ActionEvent actionEvent);
     @FXML
     protected Label titleLbl;
 
@@ -47,6 +52,31 @@ public abstract class FilesController {
     public FilesController(boolean isServerFilesController) {
         this.isServerFilesController = isServerFilesController;
         currentOperation = Operation.IDLE;
+        copyingOrCuttingFileInfoList = new ArrayList<>();
+    }
+
+    @FXML
+    public void TViewKeyReleasedAction(KeyEvent keyEvent) {
+        if (keyEvent.getCode() == KeyCode.F5) {
+            refreshBtn.fire();
+        }
+        if(currentOperation != Operation.EDITING) {
+            if (keyEvent.getCode() == KeyCode.DELETE) {
+                deleteBtn.fire();
+            }
+            if (keyEvent.getCode() == KeyCode.ESCAPE) {
+                cancelBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.C) {
+                copyBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.X) {
+                cutBtn.fire();
+            }
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V) {
+                pasteBtn.fire();
+            }
+        }
     }
 
     public Button getRefreshBtn() {
@@ -65,12 +95,20 @@ public abstract class FilesController {
         return deleteBtn;
     }
 
-    public Button getMoveBtn() {
-        return moveBtn;
+    public Button getAddFolderBtn() {
+        return addFolderBtn;
     }
 
-    public Button getAcceptBtn() {
-        return acceptBtn;
+    public Button getCopyBtn() {
+        return copyBtn;
+    }
+
+    public Button getCutBtn() {
+        return cutBtn;
+    }
+
+    public Button getPasteBtn() {
+        return pasteBtn;
     }
 
     public Button getCancelBtn() {
@@ -89,9 +127,10 @@ public abstract class FilesController {
         return currentOperation;
     }
 
-    public void setCurrentOperation(Operation currentOperation) {
-        this.currentOperation = currentOperation;
+    public void setCurrentOperation(Operation operation) {
+        this.currentOperation = operation;
     }
 
     public abstract void renameFile(FileInfo oldValue, FileInfo newValue);
+
 }

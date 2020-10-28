@@ -1,6 +1,7 @@
 package com.sepo.web.disk.client.controllers;
 
 import com.sepo.web.disk.client.ClientApp;
+import com.sepo.web.disk.client.Helpers.ControlPropertiesHelper;
 import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.*;
 import io.netty.buffer.ByteBuf;
@@ -8,21 +9,36 @@ import io.netty.buffer.ByteBufAllocator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class SignUpController implements Initializable {
+    private static final Logger logger = LogManager.getLogger(SignUpController.class);
+    @FXML
+    private Button signUpBtn;
+    @FXML
+    private Button signUpShowPassBtn;
+    @FXML
+    private Button signUpShowRepPassBtn;
+    @FXML
+    private TextField signUpPassTField;
+    @FXML
+    private TextField signUpRepPassTField;
     @FXML
     private Label successLbl;
     @FXML
     private Label errorLbl;
     @FXML
-    private TextField sighUpEmailTField;
+    private TextField signUpEmailTField;
     @FXML
     private TextField signUpRepEmailTField;
     @FXML
@@ -38,11 +54,12 @@ public class SignUpController implements Initializable {
 
     @FXML
     private void signUpAction(ActionEvent actionEvent) {
-        if (!sighUpEmailTField.getText().equals(signUpRepEmailTField.getText())) {
+        if (!signUpEmailTField.getText().equals(signUpRepEmailTField.getText())) {
             errorLbl.setVisible(true);
             errorLbl.setText("Emails doesn't matches");
             return;
         }
+
         if (!signUpPassPField.getText().equals(signUpRepPassPField.getText())) {
             errorLbl.setVisible(true);
             errorLbl.setText("Passwords doesn't matches");
@@ -52,7 +69,7 @@ public class SignUpController implements Initializable {
         MainBridge.setState(ClientEnum.State.REG, ClientEnum.StateWaiting.RESULT);
         ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
         MainBridge.sendAuthHandlerByteBuf(bb.writeByte(ClientEnum.Request.REG.getValue()), true);
-        MainBridge.authPackAndSendObj(new User(sighUpEmailTField.getText(), signUpPassPField.getText()));
+        MainBridge.authPackAndSendObj(new User(signUpEmailTField.getText(), signUpPassPField.getText()));
     }
 
     public void respondToAuthResult(ServerEnum.Respond respond) {
@@ -72,12 +89,41 @@ public class SignUpController implements Initializable {
         MainBridge.setSignUpController(this);
     }
 
-
+    @FXML
     public void showSignUpPFieldAction(ActionEvent actionEvent) {
-
+        if (signUpPassPField.getText().isEmpty()) {
+            return;
+        }
+        ControlPropertiesHelper.setPassControlsProp(signUpPassTField, signUpPassPField, signUpShowPassBtn);
     }
 
+    @FXML
     public void showSignUpRepPassPFieldAction(ActionEvent actionEvent) {
+        if (signUpRepPassPField.getText().isEmpty()) {
+            return;
+        }
+        ControlPropertiesHelper.setPassControlsProp(signUpRepPassTField, signUpRepPassPField, signUpShowRepPassBtn);
+    }
 
+    @FXML
+    public void passPFieldAction(KeyEvent keyEvent) {
+        ControlPropertiesHelper.passPFieldControlProp(signUpPassPField, signUpShowPassBtn);
+        validateTextFields();
+    }
+
+    @FXML
+    public void textFieldAction(KeyEvent keyEvent) {
+        validateTextFields();
+    }
+
+    @FXML
+    public void passRepPFieldAction(KeyEvent keyEvent) {
+        ControlPropertiesHelper.passPFieldControlProp(signUpRepPassPField, signUpShowRepPassBtn);
+        validateTextFields();
+    }
+
+    private void validateTextFields(){
+        ControlPropertiesHelper.signInBtnControlProp(signUpBtn, signUpEmailTField, signUpPassPField, signUpPassTField,
+                signUpRepEmailTField, signUpRepPassPField, signUpRepPassTField);
     }
 }

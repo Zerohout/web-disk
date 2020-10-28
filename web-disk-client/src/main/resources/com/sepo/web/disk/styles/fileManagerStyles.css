@@ -12,3 +12,43 @@
     -fx-wrap-text: true;
     -fx-text-alignment: center;
 }
+
+.tree-cell{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+    -fx-background-color: transparent;
+    -fx-text-alignment: center;
+}
+.tree-cell:selected{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+    -fx-background-color: royalblue;
+    -fx-text-alignment: center;
+}
+
+.selected-tree-cell{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-background-color: lightgray;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
+
+.tooltip{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 20px;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
+
+.context-menu{
+    -fx-font-family: "Comic Sans MS", sans-serif;
+    -fx-font-size: 15px;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}

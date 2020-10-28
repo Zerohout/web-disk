@@ -11,6 +11,7 @@ import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 public class MainBridge {
@@ -27,6 +28,9 @@ public class MainBridge {
     public static void refreshServerFiles() {
         serverFilesController.getRefreshBtn().fire();
     }
+    public static void refreshClientFiles(){
+        Platform.runLater(() -> clientFilesController.getRefreshBtn().fire());
+    }
 
     public static void setState(ClientEnum.State state, ClientEnum.StateWaiting stateWaiting) {
         if (Network.mainHandler != null) {
@@ -42,10 +46,6 @@ public class MainBridge {
         }
     }
 
-    public static void sendUserToServer(User user) {
-        Network.authHandler.sendUserData(user);
-    }
-
     public static void setSignInErrorControls(String errorText, boolean isErrorVisible, boolean isRefreshConnBtnVisible) {
         if (signInController == null) return;
         Platform.runLater(() -> signInController.setErrorControls(errorText, isErrorVisible, isRefreshConnBtnVisible));
@@ -59,10 +59,6 @@ public class MainBridge {
 
     public static void giveRegResult(ServerEnum.Respond respond) {
         Platform.runLater(() -> signUpController.respondToAuthResult(respond));
-    }
-
-    public static void giveRenameResult(ServerEnum.Respond result) {
-        Platform.runLater(() -> clientFilesController.respondToRenameResult(result));
     }
 
     public static void setClientFilesController(ClientFilesController clientFilesController) {
@@ -101,11 +97,15 @@ public class MainBridge {
         Network.authHandler.send(bb, isFLush);
     }
 
-    public static void sendFile(FileInfo fileInfo) {
-        serverFilesController.sendFileToServer(fileInfo);
+    public static void uploadFiles(ArrayList<FileInfo> fileInfoList) {
+        serverFilesController.uploadFiles(fileInfoList);
     }
 
-    public static void packAndSendObj(Object object) {
+    public static void downloadFiles(ArrayList<FileInfo> fileInfoList) {
+        clientFilesController.downloadFiles(fileInfoList);
+    }
+
+    public static void mainPackAndSendObj(Object object) {
         var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
         var msgSize = msg.readableBytes();
         var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
@@ -121,5 +121,9 @@ public class MainBridge {
         msgSizeBB.writeInt(msgSize);
         sendAuthHandlerByteBuf(msgSizeBB, false);
         sendAuthHandlerByteBuf(msg, true);
+    }
+
+    public static void setGettingFilesCount(int count){
+        Network.mainHandler.setGettingFilesCount(count);
     }
 }

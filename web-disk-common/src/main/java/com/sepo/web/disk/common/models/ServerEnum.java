@@ -5,14 +5,17 @@ import java.util.Map;
 
 public class ServerEnum {
     public enum State {
-        IDLE((byte) -1), // REQUEST
+        IDLE((byte) -1),
         AUTH((byte) -2),
         REG((byte) -3),
-        PROCESSING((byte)-4),
-        SENDING((byte) -5), // file_info, file
-        GETTING((byte) -6), // file_info, file, file_tree, state
+        PROCESSING((byte) -4),
+        SENDING((byte) -5),
+        GETTING((byte) -6),
         DELETING((byte) -7),
-        RENAMING((byte) -8);
+        RENAMING((byte) -8),
+        CREATING((byte) -9),
+        COPYING((byte) -10),
+        CUTTING((byte) -11);
 
         private final byte value;
 
@@ -26,14 +29,14 @@ public class ServerEnum {
     }
 
     public enum StateWaiting {
-        REQUEST((byte) -11), // IDLE
-        FILE((byte) -12), // IDLE, AUTH, REG
-        OBJECT((byte) -13),
-        COMPLETING((byte) -14),
-        FILE_TREE((byte) -15),
-        OBJECT_SIZE((byte) -16);
+        REQUEST((byte) -21),
+        FILE((byte) -22),
+        OBJECT((byte) -23),
+        COMPLETING((byte) -24),
+        FILE_TREE((byte) -25),
+        OBJECT_SIZE((byte) -26);
 
-        private byte value;
+        private final byte value;
 
         StateWaiting(byte value) {
             this.value = value;
@@ -45,12 +48,12 @@ public class ServerEnum {
     }
 
     public enum Respond {
-        SUCCESS((byte) -21), // auth "user"
-        FAILURE((byte) -22), // reg "user"
-        SEND((byte) -23), // send "RequestType" (file, file_tree, state)
-        GET((byte) -24), // get "RequestType" (file, )
-        OPERATION((byte) -25), // operation "RequestType" (rename, move, delete, rename)
-        CANCEL((byte) -26); // set server state to IDLE
+        SUCCESS((byte) -41),
+        FAILURE((byte) -42),
+        SEND((byte) -43),
+        GET((byte) -44),
+        OPERATION((byte) -45),
+        CANCEL((byte) -46);
 
         private final byte value;
 
@@ -64,13 +67,13 @@ public class ServerEnum {
     }
 
     public enum RespondType {
-        FILE((byte) -31), // get, send
-        FILE_TREE((byte) -32), // send
-        STATE((byte) -33), // send
-        RENAME((byte) -34), // operation
-        MOVE((byte) -35), // operation
-        CREATE((byte) -36), // operation
-        DELETE((byte) -37); // operation
+        FILE((byte) -61),
+        FILE_TREE((byte) -62),
+        STATE((byte) -63),
+        RENAME((byte) -64),
+        MOVE((byte) -65),
+        CREATE((byte) -66),
+        DELETE((byte) -67);
 
         private final byte value;
 
@@ -83,27 +86,28 @@ public class ServerEnum {
         }
     }
 
-    private static final Map<State,Byte> stateMap = new HashMap<>();
-    private static final Map<StateWaiting,Byte> stateWaitingMap = new HashMap<>();
-    private static final Map<Respond,Byte> respondMap = new HashMap<>();
-    private static final Map<RespondType,Byte> respondTypeMap = new HashMap<>();
+    private static final Map<State, Byte> stateMap = new HashMap<>();
+    private static final Map<StateWaiting, Byte> stateWaitingMap = new HashMap<>();
+    private static final Map<Respond, Byte> respondMap = new HashMap<>();
+    private static final Map<RespondType, Byte> respondTypeMap = new HashMap<>();
 
 
-    static{
-        for(var val : State.values()){
-            stateMap.put(val,val.value);
+    static {
+        for (var val : State.values()) {
+            stateMap.put(val, val.value);
         }
-        for(var val : StateWaiting.values()){
-            stateWaitingMap.put(val,val.value);
+        for (var val : StateWaiting.values()) {
+            stateWaitingMap.put(val, val.value);
         }
-        for(var val : Respond.values()){
-            respondMap.put(val,val.value);
+        for (var val : Respond.values()) {
+            respondMap.put(val, val.value);
         }
-        for(var val : RespondType.values()){
-            respondTypeMap.put(val,val.value);
+        for (var val : RespondType.values()) {
+            respondTypeMap.put(val, val.value);
         }
     }
-    public static State getStateByValue(byte value){
+
+    public static State getStateByValue(byte value) {
         return stateMap
                 .entrySet()
                 .stream()
@@ -113,7 +117,7 @@ public class ServerEnum {
                 .orElse(null);
     }
 
-    public static StateWaiting getStateWaitingByValue(byte value){
+    public static StateWaiting getStateWaitingByValue(byte value) {
         return stateWaitingMap
                 .entrySet()
                 .stream()
@@ -122,7 +126,8 @@ public class ServerEnum {
                 .findFirst()
                 .orElse(null);
     }
-    public static Respond getRespondByValue(byte value){
+
+    public static Respond getRespondByValue(byte value) {
         return respondMap
                 .entrySet()
                 .stream()
@@ -131,7 +136,8 @@ public class ServerEnum {
                 .findFirst()
                 .orElse(null);
     }
-    public static RespondType getRespondTypeByValue(byte value){
+
+    public static RespondType getRespondTypeByValue(byte value) {
         return respondTypeMap
                 .entrySet()
                 .stream()

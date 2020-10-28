@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
-
 <?import javafx.geometry.Insets?>
+
 <fx:root type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       prefHeight="400.0" prefWidth="600.0"
@@ -15,38 +11,66 @@
     <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
         <Label fx:id="titleLbl" styleClass="field-description-label"/>
         <HBox maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-            <!--Client downloaded files-->
             <TreeView fx:id="filesTView" maxHeight="Infinity" maxWidth="Infinity" editable="true"
-                      prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"/>
+                      prefHeight="200.0" showRoot="false" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" onKeyReleased="#TViewKeyReleasedAction">
+            </TreeView>
             <VBox spacing="5">
                 <Button fx:id="refreshBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#refreshBtnAction"/>
+                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#refreshBtnAction">
+                    <tooltip>
+                        <Tooltip text="Refresh files list"/>
+                    </tooltip>
+                </Button>
                 <Button fx:id="addBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#addBtnAction"/>
+                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#addBtnAction">
+                    <tooltip>
+                        <Tooltip text="Add files from computer"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="addFolderBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" focusTraversable="false" onAction="#addFolderBtnAction">
+                    <tooltip>
+                        <Tooltip text="Add folder"/>
+                    </tooltip>
+                </Button>
                 <Button fx:id="downloadBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
                         VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#downloadBtnAction"/>
                 <Button fx:id="deleteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#deleteBtnAction"/>
-                <Button fx:id="moveBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
-                <Button fx:id="acceptBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false"/>
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#deleteBtnAction" >
+                    <tooltip>
+                        <Tooltip text="Delete selected files"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="copyBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#copyBtnAction" >
+                    <tooltip>
+                        <Tooltip text="Copy selected files"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="cutBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#cutBtnAction" >
+                    <tooltip>
+                        <Tooltip text="Cut selected files"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="pasteBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#pasteBtnAction" >
+                    <tooltip>
+                        <Tooltip text="Paste copied or cut files"/>
+                    </tooltip>
+                </Button>
                 <Button fx:id="cancelBtn" maxHeight="Infinity" maxWidth="Infinity" minWidth="30" minHeight="30"
-                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#cancelBtnAction"/>
+                        VBox.vgrow="ALWAYS" disable="true" focusTraversable="false" onAction="#cancelBtnAction" >
+                    <tooltip>
+                        <Tooltip text="Cancel selection"/>
+                    </tooltip>
+                </Button>
                 <padding>
                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                 </padding>
             </VBox>
         </HBox>
     </VBox>
-
-<!--    <VBox alignment="CENTER" VBox.vgrow="ALWAYS">-->
-<!--        <Label styleClass="field-description-label" text="File info"/>-->
-
-<!--        <ListView prefHeight="200.0" VBox.vgrow="ALWAYS">-->
-
-<!--        </ListView>-->
-<!--    </VBox>-->
     <padding>
         <Insets bottom="10" left="5" right="3" top="5"/>
     </padding>

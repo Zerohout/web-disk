@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class FileInfo implements Sendable {
     private static final long serialVersionUID = 1451611233309709951L;
@@ -17,8 +16,6 @@ public class FileInfo implements Sendable {
     private boolean isFolder;
     private transient Image icon;
     private transient Path path;
-
-
 
     private FileInfo newValue;
 
@@ -37,11 +34,11 @@ public class FileInfo implements Sendable {
     }
 
     public FileInfo() {
-
     }
 
-    public void setName(String name) {
+    public FileInfo setName(String name) {
         this.name = name;
+        return this;
     }
 
     private void setIcon(String absolutePath) {
@@ -52,8 +49,9 @@ public class FileInfo implements Sendable {
         return this.absolutePath;
     }
 
-    public void setAbsolutePath(String absolutePath){
+    public FileInfo setAbsolutePath(String absolutePath){
         this.absolutePath = absolutePath;
+        return this;
     }
 
     public long getSize() {
@@ -71,7 +69,6 @@ public class FileInfo implements Sendable {
     public boolean isFolder() {
         return this.isFolder;
     }
-
 
     public Image getIcon() {
         if (icon == null) {

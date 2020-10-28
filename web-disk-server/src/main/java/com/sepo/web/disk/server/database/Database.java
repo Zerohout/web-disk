@@ -100,7 +100,7 @@ public class Database {
             if (connection != null || !connection.isClosed()) closeConnection();
             return out;
         } catch (SQLException ex) {
-            //ex.printStackTrace();
+            ex.printStackTrace();
             return null;
         }
     }

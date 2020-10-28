@@ -7,12 +7,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.DefaultFileRegion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
 import static com.sepo.web.disk.common.helpers.MainHelper.SERVER_FOLDER_NAME;
@@ -22,7 +24,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger(MainHandler.class);
 
     private BufferedOutputStream bos;
-    private MainHelper mh;
+    private final MainHelper mh;
 
     public MainHandler(MainHelper mh) {
         this.mh = mh;
@@ -52,55 +54,105 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             if (mh.getCurrentState() == ServerEnum.State.GETTING) {
                 getFiles(bb);
             }
+            if (mh.getCurrentState() == ServerEnum.State.SENDING) {
+                sendFiles(bb);
+            }
             if (mh.getCurrentState() == ServerEnum.State.DELETING) {
                 deleteFiles(bb);
             }
             if (mh.getCurrentState() == ServerEnum.State.RENAMING) {
                 renameFile(bb);
             }
+            if (mh.getCurrentState() == ServerEnum.State.CREATING) {
+                createFolder(bb);
+            }
+            if (mh.getCurrentState() == ServerEnum.State.COPYING) {
+                copyFiles(bb);
+            }
+            if (mh.getCurrentState() == ServerEnum.State.CUTTING) {
+                cutFiles(bb);
+            }
         }
     }
 
-    // распределение ByteBuff по методом в состоянии IDLE
     private void idleDistributionByMethods(ByteBuf bb) {
         if (bb.readableBytes() == 0) return;
-        switch (ClientEnum.getRequestByValue(bb.readByte())) {
-            case REFRESH:
-                logger.info("REFRESH request");
-                bb.retain().release();
-                refresh();
-                break;
-            case GET:
-                logger.info("GET request");
-                mh.setCurrentState(ServerEnum.State.GETTING)
-                        .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-                break;
-            case OPERATION:
-                logger.info("OPERATION request");
-                switch (ClientEnum.getRequestTypeByValue(bb.readByte())) {
-                    case DELETE:
-                        logger.info("\tDELETE requestType");
-                        mh.setCurrentState(ServerEnum.State.DELETING)
-                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-                        break;
-                    case RENAME:
-                        logger.info("\tRENAME requestType");
-                        mh.setCurrentState(ServerEnum.State.RENAMING)
-                                .setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
-                        break;
-                }
+        var req = ClientEnum.getRequestByValue(bb.readByte());
+        if (req == ClientEnum.Request.REFRESH) {
+            logger.info("REFRESH request");
+            bb.retain().release();
+            refresh();
+            return;
+        }
+        if (req == ClientEnum.Request.GET) {
+            logger.info("GET request");
+            mh.setCurrentState(ServerEnum.State.GETTING);
+        }
+        if (req == ClientEnum.Request.SEND) {
+            logger.info("SEND request");
+            mh.setCurrentState(ServerEnum.State.SENDING);
+        }
+        if (req == ClientEnum.Request.OPERATION) {
+            logger.info("OPERATION request");
+            var reqType = ClientEnum.getRequestTypeByValue(bb.readByte());
+            if (reqType == ClientEnum.RequestType.DELETE) {
+                logger.info("\tDELETE requestType");
+                mh.setCurrentState(ServerEnum.State.DELETING);
+            }
+            if (reqType == ClientEnum.RequestType.RENAME) {
+                logger.info("\tRENAME requestType");
+                mh.setCurrentState(ServerEnum.State.RENAMING);
+            }
+            if (reqType == ClientEnum.RequestType.CREATE) {
+                logger.info("\t CREATE requestType");
+                mh.setCurrentState(ServerEnum.State.CREATING);
+            }
+            if (reqType == ClientEnum.RequestType.COPY) {
+                logger.info("\t COPY requestType");
+                mh.setCurrentState(ServerEnum.State.COPYING);
+            }
+            if (reqType == ClientEnum.RequestType.CUT) {
+                logger.info("\t CUT requestType");
+                mh.setCurrentState(ServerEnum.State.CUTTING);
+            }
+        }
+        mh.setCurrentStateWaiting(ServerEnum.StateWaiting.OBJECT_SIZE);
+    }
+
+    //region Sending files
+    private void sendFiles(ByteBuf bb) {
+        logger.info("sendFiles");
+        getObject(bb);
+
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
+            var fileInfoList = (ArrayList<FileInfo>) mh.getReceivedObj();
+            logger.info("send files - " + fileInfoList.size());
+            for (var fileInfo : fileInfoList) {
+                sendFile(fileInfo);
+            }
+            mh.clearStage();
         }
     }
+
+    private void sendFile(FileInfo fileInfo) {
+        var newFI = new FileInfo(Path.of(fileInfo.getAbsolutePath()));
+        newFI.setNewValue(fileInfo.getNewValue());
+        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(newFI);
+        var msgSize = msg.readableBytes();
+        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        msgSizeBB.writeInt(msgSize);
+        mh.getCtx().write(msgSizeBB);
+        mh.getCtx().writeAndFlush(msg);
+        var region = new DefaultFileRegion(newFI.getPath().toFile(), 0, newFI.getSize());
+        mh.getCtx().writeAndFlush(region);
+        logger.info("file is sent");
+    }
+    //endregion
 
     //region Getting file
     private void getFiles(ByteBuf bb) {
         logger.info("getFiles");
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var fileInfo = (FileInfo) mh.getReceivedObj();
             mh.setCurrentState(ServerEnum.State.GETTING)
@@ -108,7 +160,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     .setExpectedBytes(fileInfo.getSize());
 
             var path = fileInfo.getNewValue().getAbsolutePath();
-            if (path.equals(SERVER_FOLDER_NAME)) {
+            if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
                 path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
             }
             try {
@@ -144,13 +196,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     //region Deleting files
     private void deleteFiles(ByteBuf bb) {
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
-
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var deletingList = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
             for (var fileInfo : deletingList) {
@@ -169,12 +215,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     //region Renaming file
     private void renameFile(ByteBuf bb) {
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
-            mh.setObjectSize(bb);
-        }
-        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
-            mh.setObject(bb);
-        }
+        getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
             var fileInfo = (FileInfo) mh.getReceivedObj();
             var oldFile = new File(fileInfo.getAbsolutePath());
@@ -182,11 +223,78 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             var result = oldFile.renameTo(new File(fileInfo.getNewValue().getAbsolutePath()))
                     ? ServerEnum.Respond.SUCCESS
                     : ServerEnum.Respond.FAILURE;
-            mh.sendResult(result);
+            mh.sendRespond(result);
             idleDistributionByMethods(bb);
         }
 
         if (bb.readableBytes() == 0) bb.release();
+    }
+    //endregion
+
+    //region Creating folder
+    private void createFolder(ByteBuf bb) {
+        getObject(bb);
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
+            var fileInfo = (FileInfo) mh.getReceivedObj();
+            var path = fileInfo.getNewValue().getAbsolutePath();
+            if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
+                path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
+            }
+            try {
+                Files.createDirectory(new File(path).toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mh.setCurrentStateWaiting(ServerEnum.StateWaiting.REQUEST);
+        }
+    }
+    //endregion
+
+    //region Copying files
+    private void copyFiles(ByteBuf bb){
+        getObject(bb);
+        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
+            var copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
+            for(var fileInfo : copyingFiles){
+                var destination = fileInfo.getNewValue().getAbsolutePath();
+                if (destination.equals(SERVER_FOLDER_NAME + "\\")) {
+                    destination = mh.getUserFilesPath().toString();
+                }
+                try {
+                    Files.copy(Path.of(fileInfo.getAbsolutePath()),
+                            Path.of(destination + "\\"+ fileInfo.getName()),
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            refresh();
+            mh.setCurrentStateWaiting(ServerEnum.StateWaiting.REQUEST);
+        }
+    }
+    //endregion
+
+    //region Cutting files
+    private void cutFiles(ByteBuf bb){
+        getObject(bb);
+        if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
+            var copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
+            for(var fileInfo : copyingFiles){
+                var destination = fileInfo.getNewValue().getAbsolutePath();
+                if (destination.equals(SERVER_FOLDER_NAME + "\\")) {
+                    destination = mh.getUserFilesPath().toString();
+                }
+                try {
+                    Files.move(Path.of(fileInfo.getAbsolutePath()),
+                            Path.of(destination + "\\"+ fileInfo.getName()),
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            refresh();
+            mh.setCurrentStateWaiting(ServerEnum.StateWaiting.REQUEST);
+        }
     }
     //endregion
 
@@ -202,7 +310,14 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     //endregion
 
     //region Service methods
-
+    private void getObject(ByteBuf bb) {
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT_SIZE) {
+            mh.setObjectSize(bb);
+        }
+        if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.OBJECT) {
+            mh.setObject(bb);
+        }
+    }
     //endregion
 
     @Override

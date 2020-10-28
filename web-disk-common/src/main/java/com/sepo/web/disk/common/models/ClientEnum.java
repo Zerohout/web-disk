@@ -7,11 +7,11 @@ public class ClientEnum implements Sendable {
     private static final long serialVersionUID = -1419756740433855727L;
 
     public enum State {
-        IDLE((byte) 1), // NOTHING, RESULT
-        AUTH((byte) 2), // RESULT
-        REG((byte) 3), // RESULT
-        SENDING((byte) 4), // file_info, file
-        GETTING((byte) 5), // file_info, file, file_tree, state
+        IDLE((byte) 1),
+        AUTH((byte) 2),
+        REG((byte) 3),
+        SENDING((byte) 4),
+        GETTING((byte) 5),
         REFRESHING((byte) 6);
 
         private final byte value;
@@ -26,13 +26,16 @@ public class ClientEnum implements Sendable {
     }
 
     public enum StateWaiting {
-        NOTHING((byte) 11), // IDLE
-        RESULT((byte) 12), // IDLE, AUTH, REG
-        RESPOND((byte) 13),
-        TRANSFER((byte) 14),
-        COMPLETING((byte) 15);
+        NOTHING((byte) 21),
+        RESULT((byte) 22),
+        RESPOND((byte) 23),
+        TRANSFER((byte) 24),
+        COMPLETING((byte) 25),
+        OBJECT_SIZE((byte) 26),
+        OBJECT((byte) 27),
+        FILE((byte) 28);
 
-        private byte value;
+        private final byte value;
 
         StateWaiting(byte value) {
             this.value = value;
@@ -44,13 +47,13 @@ public class ClientEnum implements Sendable {
     }
 
     public enum Request {
-        AUTH((byte) 21), // auth "user"
-        REG((byte) 22), // reg "user"
-        SEND((byte) 23), // send "RequestType" (file, file_tree, state)
-        GET((byte) 24), // get "RequestType" (file, )
-        REFRESH((byte)25),
-        OPERATION((byte) 26), // operation "RequestType" (rename, move, delete, rename)
-        CANCEL((byte) 27); // set server state to IDLE
+        AUTH((byte) 41),
+        REG((byte) 42),
+        SEND((byte) 43),
+        GET((byte) 44),
+        REFRESH((byte) 45),
+        OPERATION((byte) 46),
+        CANCEL((byte) 47);
 
         private final byte value;
 
@@ -64,12 +67,14 @@ public class ClientEnum implements Sendable {
     }
 
     public enum RequestType {
-        FILE((byte) 31), // get, send
-        STATE((byte) 33), // send
-        RENAME((byte) 34), // operation
-        MOVE((byte) 35), // operation
-        CREATE((byte) 36), // operation
-        DELETE((byte) 37); // operation
+        FILE((byte) 61),
+        STATE((byte) 62),
+        RENAME((byte) 63),
+        MOVE((byte) 64),
+        CREATE((byte) 65),
+        DELETE((byte) 66),
+        COPY((byte) 67),
+        CUT((byte) 68);
 
         private final byte value;
 
@@ -82,69 +87,27 @@ public class ClientEnum implements Sendable {
         }
     }
 
-    private static final Map<State,Byte> stateMap = new HashMap<>();
-    private static final Map<StateWaiting,Byte> stateWaitingMap = new HashMap<>();
-    private static final Map<Request,Byte> requestMap = new HashMap<>();
-    private static final Map<RequestType,Byte> requestTypeMap = new HashMap<>();
+    private static final Map<State, Byte> stateMap = new HashMap<>();
+    private static final Map<StateWaiting, Byte> stateWaitingMap = new HashMap<>();
+    private static final Map<Request, Byte> requestMap = new HashMap<>();
+    private static final Map<RequestType, Byte> requestTypeMap = new HashMap<>();
 
-
-    static{
-        for(var val : State.values()){
-            stateMap.put(val,val.value);
+    static {
+        for (var val : State.values()) {
+            stateMap.put(val, val.value);
         }
-        for(var val : StateWaiting.values()){
-            stateWaitingMap.put(val,val.value);
+        for (var val : StateWaiting.values()) {
+            stateWaitingMap.put(val, val.value);
         }
-        for(var val : Request.values()){
-            requestMap.put(val,val.value);
+        for (var val : Request.values()) {
+            requestMap.put(val, val.value);
         }
-        for(var val : RequestType.values()){
-            requestTypeMap.put(val,val.value);
+        for (var val : RequestType.values()) {
+            requestTypeMap.put(val, val.value);
         }
     }
 
-//    private State state;
-//    private StateWaiting stateWaiting;
-//    private Request request;
-//    private RequestType requestType;
-//
-//    public State getState() {
-//        return state;
-//    }
-//
-//    public ClientEnum setState(State state) {
-//        this.state = state;
-//        return this;
-//    }
-//
-//    public StateWaiting getStateWaiting() {
-//        return stateWaiting;
-//    }
-//
-//    public ClientEnum setStateWaiting(StateWaiting stateWaiting) {
-//        this.stateWaiting = stateWaiting;
-//        return this;
-//    }
-//
-//    public Request getRequest() {
-//        return request;
-//    }
-//
-//    public ClientEnum setRequest(Request request) {
-//        this.request = request;
-//        return this;
-//    }
-//
-//    public RequestType getRequestType() {
-//        return requestType;
-//    }
-//
-//    public ClientEnum setRequestType(RequestType requestType) {
-//        this.requestType = requestType;
-//        return this;
-//    }
-
-    public static State getStateByValue(byte value){
+    public static State getStateByValue(byte value) {
         return stateMap
                 .entrySet()
                 .stream()
@@ -154,7 +117,7 @@ public class ClientEnum implements Sendable {
                 .orElse(null);
     }
 
-    public static StateWaiting getStateWaitingByValue(byte value){
+    public static StateWaiting getStateWaitingByValue(byte value) {
         return stateWaitingMap
                 .entrySet()
                 .stream()
@@ -163,7 +126,8 @@ public class ClientEnum implements Sendable {
                 .findFirst()
                 .orElse(null);
     }
-    public static Request getRequestByValue(byte value){
+
+    public static Request getRequestByValue(byte value) {
         return requestMap
                 .entrySet()
                 .stream()
@@ -172,7 +136,8 @@ public class ClientEnum implements Sendable {
                 .findFirst()
                 .orElse(null);
     }
-    public static RequestType getRequestTypeByValue(byte value){
+
+    public static RequestType getRequestTypeByValue(byte value) {
         return requestTypeMap
                 .entrySet()
                 .stream()

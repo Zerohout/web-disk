@@ -63,7 +63,7 @@ public class MainHelper {
         }
     }
 
-    public void sendResult(ServerEnum.Respond result){
+    public void sendRespond(ServerEnum.Respond result){
         var msg = ByteBufAllocator.DEFAULT.directBuffer(1);
         msg.writeByte(result.getValue());
         ctx.writeAndFlush(msg);
