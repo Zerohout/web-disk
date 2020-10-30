@@ -106,18 +106,18 @@ public class MainBridge {
     }
 
     public static void mainPackAndSendObj(Object object) {
-        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
-        var msgSize = msg.readableBytes();
-        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        ByteBuf msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
+        int msgSize = msg.readableBytes();
+        ByteBuf msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
         msgSizeBB.writeInt(msgSize);
         sendMainHandlerByteBuf(msgSizeBB, false);
         sendMainHandlerByteBuf(msg, true);
     }
 
     public static void authPackAndSendObj(Object object) {
-        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
-        var msgSize = msg.readableBytes();
-        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        ByteBuf msg = ObjectEncoderDecoder.EncodeObjToByteBuf(object);
+        int msgSize = msg.readableBytes();
+        ByteBuf msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
         msgSizeBB.writeInt(msgSize);
         sendAuthHandlerByteBuf(msgSizeBB, false);
         sendAuthHandlerByteBuf(msg, true);

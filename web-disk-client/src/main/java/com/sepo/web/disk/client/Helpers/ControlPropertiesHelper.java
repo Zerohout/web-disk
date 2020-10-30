@@ -20,12 +20,12 @@ public class ControlPropertiesHelper {
     public static final String CLIENT_FOLDER_NAME = "client_folder";
 
     public static void setPassControlsProp(TextField passTField, PasswordField passPField, Button passShowBtn) {
-        var passTFieldIsVisible = passTField.isVisible();
+        boolean passTFieldIsVisible = passTField.isVisible();
         passTField.setVisible(!passTFieldIsVisible);
         passPField.setVisible(passTFieldIsVisible);
         passShowBtn.setText(passTFieldIsVisible ? "show" : "hide");
         if (passTFieldIsVisible) {
-            var pass = passTField.getText();
+            String pass = passTField.getText();
             passPField.setText(pass);
             if (pass.isEmpty()) passShowBtn.setDisable(true);
             passTField.clear();
@@ -36,14 +36,14 @@ public class ControlPropertiesHelper {
     }
 
     public static void passPFieldControlProp(PasswordField passPField, Button showPassBtn) {
-        var pass = passPField.getText();
-        var passIsEmptyOrBlank = pass.isEmpty() || pass.isBlank();
+        String pass = passPField.getText();
+        boolean passIsEmptyOrBlank = pass.isEmpty() || pass.isBlank();
         if (showPassBtn.isDisable() == passIsEmptyOrBlank) return;
         showPassBtn.setDisable(passIsEmptyOrBlank);
     }
 
     public static void signInBtnControlProp(Button button, TextField... textFields) {
-        for (var tField: textFields) {
+        for (TextField tField: textFields) {
             if(tField.getText().isBlank() || tField.getText().isEmpty()){
                 if(!tField.isVisible()) continue;
                 button.setDisable(true);
@@ -65,7 +65,7 @@ public class ControlPropertiesHelper {
         }
         treeView.getSelectionModel().clearSelection();
         treeView.refresh();
-        var root = new TreeItem<FileInfo>();
+        TreeItem<FileInfo> root = new TreeItem<FileInfo>();
         root.setExpanded(true);
         treeView.setRoot(root);
         setTViewFiles(folder, root);
@@ -77,19 +77,19 @@ public class ControlPropertiesHelper {
     }
 
     public static void setTViewFiles(Folder rootFolder, TreeItem<FileInfo> root) {
-        for (var folder : rootFolder.getFolders()) {
-            var rootItem = new TreeItem<>(folder.getFileInfo());
+        for (Folder folder : rootFolder.getFolders()) {
+            TreeItem<FileInfo> rootItem = new TreeItem<>(folder.getFileInfo());
             root.getChildren().add(rootItem);
             setTViewFiles(folder, rootItem);
         }
-        for (var file : rootFolder.getFiles()) {
-            var treeItem = new TreeItem<>(file);
+        for (FileInfo file : rootFolder.getFiles()) {
+            TreeItem<FileInfo> treeItem = new TreeItem<>(file);
             root.getChildren().add(treeItem);
         }
     }
 
     public static void setBtnIcon(String iconName, Button btn) {
-        var icon = new ImageView(new Image(ClientApp.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png"), 25, 25, true, true));
+        ImageView icon = new ImageView(new Image(ClientApp.class.getResourceAsStream("/com/sepo/web/disk/icons/" + iconName + ".png"), 25, 25, true, true));
         btn.setGraphic(icon);
     }
 
@@ -103,7 +103,7 @@ public class ControlPropertiesHelper {
     public static String getDestinationPath(TreeView<FileInfo> filesTView, String defaultDestination) {
         String destinationPath;
         if (filesTView.getSelectionModel().getSelectedItems().size() == 1) {
-            var selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
+            FileInfo selectedFileInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView).get(0);
             if (selectedFileInfo.isFolder()) {
                 destinationPath = selectedFileInfo.getAbsolutePath();
             } else {
@@ -116,7 +116,7 @@ public class ControlPropertiesHelper {
     }
 
     public static int getRandomFolderNumber(){
-        var rnd = new Random();
+        Random rnd = new Random();
         return rnd.nextInt(Integer.MAX_VALUE-1);
     }
 }

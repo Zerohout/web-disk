@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class ServerFilesControl extends VBox {
     public ServerFilesControl() {
-        var fxmlLoader = new FXMLLoader(getClass().getResource("/com/sepo/web/disk/views/filesViewer.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/sepo/web/disk/views/filesViewer.fxml"));
         fxmlLoader.setRoot(this);
         fxmlLoader.setController(new ServerFilesController());
 

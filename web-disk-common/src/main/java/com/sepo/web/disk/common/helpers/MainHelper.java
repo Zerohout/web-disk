@@ -13,10 +13,10 @@ public class MainHelper {
 
     public static void createFileTree(Path path, Folder mainFolder, String folderName)  {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            for (var p : stream) {
-                var fileInfo = new FileInfo(p);
+            for (Path p : stream) {
+                FileInfo fileInfo = new FileInfo(p);
                 if (Files.isDirectory(p)) {
-                    var folder = new Folder(fileInfo, folderName);
+                    Folder folder = new Folder(fileInfo, folderName);
                     mainFolder.addFolders(folder);
                     createFileTree(p, folder, folderName);
                 }else{

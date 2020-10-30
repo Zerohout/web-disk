@@ -17,10 +17,12 @@ import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
@@ -40,7 +42,7 @@ public class ServerFilesController extends FilesController implements Initializa
         initButtons();
         initTreeViews(filesTView, this);
         sendRefreshRequest();
-        var downTT = new Tooltip();
+        Tooltip downTT = new Tooltip();
         downTT.setText("Download selected files from server");
         downloadBtn.setTooltip(downTT);
     }
@@ -59,12 +61,12 @@ public class ServerFilesController extends FilesController implements Initializa
 
     @FXML
     public void addBtnAction(ActionEvent actionEvent) {
-        var fileChooser = new FileChooser();
+        FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл для копирования в папку загрузок");
-        var chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
+        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
         if (chosenFiles == null) return;
-        var filesList = new ArrayList<>(chosenFiles);
-        var fileInfoList = new ArrayList<FileInfo>();
+        ArrayList<File> filesList = new ArrayList<>(chosenFiles);
+        ArrayList<FileInfo> fileInfoList = new ArrayList<FileInfo>();
         filesList.forEach(file -> fileInfoList.add(new FileInfo(file.toPath())));
         uploadFiles(fileInfoList);
         refreshBtn.fire();
@@ -85,7 +87,7 @@ public class ServerFilesController extends FilesController implements Initializa
     public void deleteBtnAction(ActionEvent actionEvent) {
         if (deleteBtn.isDisable()) return;
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
-        var req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        ByteBuf req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.DELETE.getValue());
         MainBridge.sendMainHandlerByteBuf(req, false);
@@ -96,13 +98,13 @@ public class ServerFilesController extends FilesController implements Initializa
     @FXML
     public void addFolderBtnAction(ActionEvent actionEvent) {
         if (addFolderBtn.isDisable()) return;
-        var req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        ByteBuf req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.CREATE.getValue());
         MainBridge.sendMainHandlerByteBuf(req, false);
 
-        var fileInfo = new FileInfo().setName("New_Folder_" + getRandomFolderNumber());
-        var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
+        FileInfo fileInfo = new FileInfo().setName("New_Folder_" + getRandomFolderNumber());
+        String destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
         fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
         MainBridge.mainPackAndSendObj(fileInfo);
         refreshBtn.fire();
@@ -133,8 +135,8 @@ public class ServerFilesController extends FilesController implements Initializa
         if(currentOperation == Operation.CUTTING){
             req.writeByte(ClientEnum.RequestType.CUT.getValue());
         }
-        for (var fileInfo : copyingOrCuttingFileInfoList) {
-            var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\";
+        for (FileInfo fileInfo : copyingOrCuttingFileInfoList) {
+            String destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\";
             fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
         }
         MainBridge.sendMainHandlerByteBuf(req, false);
@@ -157,7 +159,7 @@ public class ServerFilesController extends FilesController implements Initializa
     @Override
     public void renameFile(FileInfo oldValue, FileInfo newValue) {
         oldValue.setNewValue(newValue);
-        var req = ByteBufAllocator.DEFAULT.directBuffer(2);
+        ByteBuf req = ByteBufAllocator.DEFAULT.directBuffer(2);
         req.writeByte(ClientEnum.Request.OPERATION.getValue());
         req.writeByte(ClientEnum.RequestType.RENAME.getValue());
         MainBridge.setState(ClientEnum.State.IDLE, ClientEnum.StateWaiting.RESULT);
@@ -171,15 +173,15 @@ public class ServerFilesController extends FilesController implements Initializa
     }
 
     public void uploadFiles(ArrayList<FileInfo> fileInfoList) {
-        for (var fileInfo : fileInfoList) {
+        for (FileInfo fileInfo : fileInfoList) {
             ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
             MainBridge.sendMainHandlerByteBuf(bb.writeByte(ClientEnum.Request.GET.getValue()), false);
-            var destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
+            String destinationPath = getDestinationPath(filesTView, SERVER_FOLDER_NAME) + "\\" + fileInfo.getName();
             fileInfo.setNewValue(new FileInfo().setAbsolutePath(destinationPath));
             MainBridge.mainPackAndSendObj(fileInfo);
-            var file = fileInfo.getPath().toFile();
+            File file = fileInfo.getPath().toFile();
             try {
-                var region = new DefaultFileRegion(file, 0, Files.size(file.toPath()));
+                DefaultFileRegion region = new DefaultFileRegion(file, 0, Files.size(file.toPath()));
                 MainBridge.sendMainHandlerByteBuf(region, true);
             } catch (IOException e) {
                 e.printStackTrace();

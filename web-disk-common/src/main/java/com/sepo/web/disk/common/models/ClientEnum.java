@@ -93,16 +93,16 @@ public class ClientEnum implements Sendable {
     private static final Map<RequestType, Byte> requestTypeMap = new HashMap<>();
 
     static {
-        for (var val : State.values()) {
+        for (State val : State.values()) {
             stateMap.put(val, val.value);
         }
-        for (var val : StateWaiting.values()) {
+        for (StateWaiting val : StateWaiting.values()) {
             stateWaitingMap.put(val, val.value);
         }
-        for (var val : Request.values()) {
+        for (Request val : Request.values()) {
             requestMap.put(val, val.value);
         }
-        for (var val : RequestType.values()) {
+        for (RequestType val : RequestType.values()) {
             requestTypeMap.put(val, val.value);
         }
     }

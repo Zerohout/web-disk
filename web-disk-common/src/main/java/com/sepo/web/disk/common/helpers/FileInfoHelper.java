@@ -8,8 +8,8 @@ import java.io.File;
 
 public class FileInfoHelper {
     public static Image setFileInfoIcon(String absolutePath) {
-        var file = new File(absolutePath);
-        var extension = FilenameUtils.getExtension(file.getName());
+        File file = new File(absolutePath);
+        String extension = FilenameUtils.getExtension(file.getName());
         String iconName;
         if (file.isDirectory()) {
             iconName = "folder";

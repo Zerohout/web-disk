@@ -46,7 +46,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         }
         if (currentStateWaiting == ClientEnum.StateWaiting.COMPLETING) {
             logger.info("завершаем операцию");
-            var folder = (Folder) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
+            Folder folder = (Folder) ObjectEncoderDecoder.DecodeByteBufToObject(accumulator);
             accumulator.retain().release();
             currentState = ClientEnum.State.IDLE;
             currentStateWaiting = ClientEnum.StateWaiting.NOTHING;
@@ -63,14 +63,14 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         logger.info("got message");
         logger.info(currentState+", "+currentStateWaiting);
-        var bb = (ByteBuf) msg;
+        ByteBuf bb = (ByteBuf) msg;
         while (bb.readableBytes() > 0) {
             if (currentState == ClientEnum.State.REFRESHING) {
                 refreshing(bb);
             }
             if (currentState == ClientEnum.State.IDLE && currentStateWaiting == ClientEnum.StateWaiting.RESULT) {
                 logger.info("got result");
-                var respond = ServerEnum.getRespondByValue(bb.readByte());
+                ServerEnum.Respond respond = ServerEnum.getRespondByValue(bb.readByte());
                 MainBridge.refreshClientFiles();
                 bb.release();
                 currentStateWaiting = ClientEnum.StateWaiting.NOTHING;

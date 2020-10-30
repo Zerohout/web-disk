@@ -6,6 +6,7 @@ import com.sepo.web.disk.client.Helpers.MainBridge;
 import com.sepo.web.disk.common.models.ClientEnum;
 import com.sepo.web.disk.common.models.FileInfo;
 import com.sepo.web.disk.common.models.Folder;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import static com.sepo.web.disk.client.Helpers.ControlPropertiesHelper.*;
@@ -50,7 +52,7 @@ public class ClientFilesController extends FilesController implements Initializa
         initButtons();
         initTreeViews(filesTView, this);
         clientFolder = refreshTView(filesTView, clientFolder);
-        var downTT = new Tooltip();
+        Tooltip downTT = new Tooltip();
         downTT.setText("Upload selected files to server");
         downloadBtn.setTooltip(downTT);
     }
@@ -69,14 +71,14 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void addBtnAction(ActionEvent actionEvent) {
-        var fileChooser = new FileChooser();
+        FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл для копирования в папку загрузок");
-        var chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
+        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(ClientApp.getStage());
         if (chosenFiles == null) return;
-        var files = new ArrayList<>(chosenFiles);
+        ArrayList<File> files = new ArrayList<>(chosenFiles);
         try {
-            for (var file : files) {
-                var destinationPath = Path.of(getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString()));
+            for (File file : files) {
+                Path destinationPath = Path.of(getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString()));
                 Files.copy(file.toPath(), destinationPath.resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
@@ -94,7 +96,7 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void downloadBtnAction(ActionEvent actionEvent) {
-        var selectedItems = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
+        ArrayList<FileInfo> selectedItems = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
         MainBridge.uploadFiles(selectedItems);
 
         MainBridge.refreshServerFiles();
@@ -102,8 +104,8 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void addFolderBtnAction(ActionEvent actionEvent){
-        var destinationPath = Path.of(getDestinationPath(filesTView,Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString()));
-        var folder = new File(destinationPath.toString() + "\\New_Folder_"+getRandomFolderNumber()+"\\");
+        Path destinationPath = Path.of(getDestinationPath(filesTView,Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString()));
+        File folder = new File(destinationPath.toString() + "\\New_Folder_"+getRandomFolderNumber()+"\\");
 
         try {
             Files.createDirectory(folder.toPath());
@@ -129,8 +131,8 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @FXML
     public void pasteBtnAction(ActionEvent actionEvent){
-        for(var fileInfo : copyingOrCuttingFileInfoList){
-            var destinationPath = getDestinationPath(filesTView,Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
+        for(FileInfo fileInfo : copyingOrCuttingFileInfoList){
+            String destinationPath = getDestinationPath(filesTView,Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
             destinationPath += "\\" + fileInfo.getName();
             try {
                 if(currentOperation == Operation.COPYING) {
@@ -152,9 +154,9 @@ public class ClientFilesController extends FilesController implements Initializa
     @FXML
     public void deleteBtnAction(ActionEvent actionEvent) {
         if(deleteBtn.isDisable()) return;
-        var selectedFilesInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
+        ArrayList<FileInfo> selectedFilesInfo = ControlPropertiesHelper.getSelectedFilesInfo(filesTView);
         try {
-            for (var fileInfo : selectedFilesInfo) {
+            for (FileInfo fileInfo : selectedFilesInfo) {
                 Files.delete(fileInfo.getPath());
             }
         } catch (IOException e) {
@@ -175,7 +177,7 @@ public class ClientFilesController extends FilesController implements Initializa
 
     @Override
     public void renameFile(FileInfo oldValue, FileInfo newValue) {
-        var oldFile = new File(oldValue.getAbsolutePath());
+        File oldFile = new File(oldValue.getAbsolutePath());
         oldFile.renameTo(new File(newValue.getAbsolutePath()));
         refreshBtn.fire();
     }
@@ -185,11 +187,11 @@ public class ClientFilesController extends FilesController implements Initializa
         MainBridge.setGettingFilesCount(fileInfoList.size());
 
         fileInfoList.forEach(f -> {
-            var destinationPath = getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
+            String destinationPath = getDestinationPath(filesTView, Path.of(CLIENT_FOLDER_PATH_NAME).toAbsolutePath().toString());
             f.setNewValue(new FileInfo().setAbsolutePath(destinationPath + "\\" + f.getName()));
         });
 
-        var bb = ByteBufAllocator.DEFAULT.directBuffer(1);
+        ByteBuf bb = ByteBufAllocator.DEFAULT.directBuffer(1);
         bb.writeByte(ClientEnum.Request.SEND.getValue());
 
         MainBridge.sendMainHandlerByteBuf(bb, false);

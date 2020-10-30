@@ -93,16 +93,16 @@ public class ServerEnum {
 
 
     static {
-        for (var val : State.values()) {
+        for (State val : State.values()) {
             stateMap.put(val, val.value);
         }
-        for (var val : StateWaiting.values()) {
+        for (StateWaiting val : StateWaiting.values()) {
             stateWaitingMap.put(val, val.value);
         }
-        for (var val : Respond.values()) {
+        for (Respond val : Respond.values()) {
             respondMap.put(val, val.value);
         }
-        for (var val : RespondType.values()) {
+        for (RespondType val : RespondType.values()) {
             respondTypeMap.put(val, val.value);
         }
     }

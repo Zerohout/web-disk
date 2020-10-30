@@ -57,7 +57,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
             mh.setObject(bb);
         }
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var user = (User) mh.getReceivedObj();
+            User user = (User) mh.getReceivedObj();
 
             ServerEnum.Respond result;
             if (Database.getUser(user.getEmail(), user.getPassword()) == null) {
@@ -82,7 +82,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
             mh.setObject(bb);
         }
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var result = Database.insertUser((User) mh.getReceivedObj())
+            ServerEnum.Respond result = Database.insertUser((User) mh.getReceivedObj())
                     ? ServerEnum.Respond.SUCCESS
                     : ServerEnum.Respond.FAILURE;
 
@@ -104,7 +104,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         logger.info("channel read");
 
-        var bb = (ByteBuf) msg;
+        ByteBuf bb = (ByteBuf) msg;
         while (bb.readableBytes() > 0) {
             if (mh.getCurrentState() == ServerEnum.State.IDLE) {
                 logger.info("get request");

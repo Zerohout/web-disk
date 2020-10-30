@@ -21,7 +21,7 @@ public class FileInfo implements Sendable {
 
     public FileInfo(Path path) {
         try {
-            var file = new File(path.toUri());
+            File file = new File(path.toUri());
             this.name = file.getName();
             this.absolutePath = file.getAbsolutePath();
             this.size = Files.size(path);

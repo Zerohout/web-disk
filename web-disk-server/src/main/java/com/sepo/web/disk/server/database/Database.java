@@ -96,7 +96,7 @@ public class Database {
                         .where("password", args[1]).build());
             }
             if (result == null) return null;
-            var out = new User(result.getString("email"), result.getString("password"));
+            User out = new User(result.getString("email"), result.getString("password"));
             if (connection != null || !connection.isClosed()) closeConnection();
             return out;
         } catch (SQLException ex) {

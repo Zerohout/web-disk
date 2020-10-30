@@ -26,7 +26,7 @@ public class User implements Sendable {
     private String passwordHash(String pass) {
         String generatedPassword = null;
         try {
-            var salt = new StringBuilder(email).reverse().toString();
+            String salt = new StringBuilder(email).reverse().toString();
             MessageDigest md = MessageDigest.getInstance("SHA-512");
             md.update(salt.getBytes(StandardCharsets.UTF_8));
             byte[] bytes = md.digest(pass.getBytes(StandardCharsets.UTF_8));

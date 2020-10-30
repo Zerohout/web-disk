@@ -46,7 +46,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         logger.info("channelRead()");
 
-        var bb = (ByteBuf) msg;
+        ByteBuf bb = (ByteBuf) msg;
         while (bb.readableBytes() > 0) {
             if (mh.getCurrentState() == ServerEnum.State.IDLE) {
                 idleDistributionByMethods(bb);
@@ -77,7 +77,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     private void idleDistributionByMethods(ByteBuf bb) {
         if (bb.readableBytes() == 0) return;
-        var req = ClientEnum.getRequestByValue(bb.readByte());
+        ClientEnum.Request req = ClientEnum.getRequestByValue(bb.readByte());
         if (req == ClientEnum.Request.REFRESH) {
             logger.info("REFRESH request");
             bb.retain().release();
@@ -94,7 +94,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         }
         if (req == ClientEnum.Request.OPERATION) {
             logger.info("OPERATION request");
-            var reqType = ClientEnum.getRequestTypeByValue(bb.readByte());
+            ClientEnum.RequestType reqType = ClientEnum.getRequestTypeByValue(bb.readByte());
             if (reqType == ClientEnum.RequestType.DELETE) {
                 logger.info("\tDELETE requestType");
                 mh.setCurrentState(ServerEnum.State.DELETING);
@@ -125,9 +125,9 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         getObject(bb);
 
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var fileInfoList = (ArrayList<FileInfo>) mh.getReceivedObj();
+            ArrayList<FileInfo> fileInfoList = (ArrayList<FileInfo>) mh.getReceivedObj();
             logger.info("send files - " + fileInfoList.size());
-            for (var fileInfo : fileInfoList) {
+            for (FileInfo fileInfo : fileInfoList) {
                 sendFile(fileInfo);
             }
             mh.clearStage();
@@ -135,15 +135,15 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void sendFile(FileInfo fileInfo) {
-        var newFI = new FileInfo(Path.of(fileInfo.getAbsolutePath()));
+        FileInfo newFI = new FileInfo(Path.of(fileInfo.getAbsolutePath()));
         newFI.setNewValue(fileInfo.getNewValue());
-        var msg = ObjectEncoderDecoder.EncodeObjToByteBuf(newFI);
-        var msgSize = msg.readableBytes();
-        var msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
+        ByteBuf msg = ObjectEncoderDecoder.EncodeObjToByteBuf(newFI);
+        int msgSize = msg.readableBytes();
+        ByteBuf msgSizeBB = ByteBufAllocator.DEFAULT.directBuffer(4);
         msgSizeBB.writeInt(msgSize);
         mh.getCtx().write(msgSizeBB);
         mh.getCtx().writeAndFlush(msg);
-        var region = new DefaultFileRegion(newFI.getPath().toFile(), 0, newFI.getSize());
+        DefaultFileRegion region = new DefaultFileRegion(newFI.getPath().toFile(), 0, newFI.getSize());
         mh.getCtx().writeAndFlush(region);
         logger.info("file is sent");
     }
@@ -154,12 +154,12 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         logger.info("getFiles");
         getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var fileInfo = (FileInfo) mh.getReceivedObj();
+            FileInfo fileInfo = (FileInfo) mh.getReceivedObj();
             mh.setCurrentState(ServerEnum.State.GETTING)
                     .setCurrentStateWaiting(ServerEnum.StateWaiting.FILE)
                     .setExpectedBytes(fileInfo.getSize());
 
-            var path = fileInfo.getNewValue().getAbsolutePath();
+            String path = fileInfo.getNewValue().getAbsolutePath();
             if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
                 path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
             }
@@ -198,8 +198,8 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private void deleteFiles(ByteBuf bb) {
         getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var deletingList = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
-            for (var fileInfo : deletingList) {
+            ArrayList<FileInfo> deletingList = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
+            for (FileInfo fileInfo : deletingList) {
                 try {
                     Files.delete(Path.of(fileInfo.getAbsolutePath()));
                 } catch (IOException e) {
@@ -217,10 +217,10 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private void renameFile(ByteBuf bb) {
         getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var fileInfo = (FileInfo) mh.getReceivedObj();
-            var oldFile = new File(fileInfo.getAbsolutePath());
+            FileInfo fileInfo = (FileInfo) mh.getReceivedObj();
+            File oldFile = new File(fileInfo.getAbsolutePath());
 
-            var result = oldFile.renameTo(new File(fileInfo.getNewValue().getAbsolutePath()))
+            ServerEnum.Respond result = oldFile.renameTo(new File(fileInfo.getNewValue().getAbsolutePath()))
                     ? ServerEnum.Respond.SUCCESS
                     : ServerEnum.Respond.FAILURE;
             mh.sendRespond(result);
@@ -235,8 +235,8 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private void createFolder(ByteBuf bb) {
         getObject(bb);
         if (mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING) {
-            var fileInfo = (FileInfo) mh.getReceivedObj();
-            var path = fileInfo.getNewValue().getAbsolutePath();
+            FileInfo fileInfo = (FileInfo) mh.getReceivedObj();
+            String path = fileInfo.getNewValue().getAbsolutePath();
             if (path.equals(SERVER_FOLDER_NAME + "\\" + fileInfo.getName())) {
                 path = mh.getUserFilesPath().resolve(fileInfo.getName()).toString();
             }
@@ -254,9 +254,9 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private void copyFiles(ByteBuf bb){
         getObject(bb);
         if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
-            var copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
-            for(var fileInfo : copyingFiles){
-                var destination = fileInfo.getNewValue().getAbsolutePath();
+            ArrayList<FileInfo> copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
+            for(FileInfo fileInfo : copyingFiles){
+                String destination = fileInfo.getNewValue().getAbsolutePath();
                 if (destination.equals(SERVER_FOLDER_NAME + "\\")) {
                     destination = mh.getUserFilesPath().toString();
                 }
@@ -278,9 +278,9 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private void cutFiles(ByteBuf bb){
         getObject(bb);
         if(mh.getCurrentStateWaiting() == ServerEnum.StateWaiting.COMPLETING){
-            var copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
-            for(var fileInfo : copyingFiles){
-                var destination = fileInfo.getNewValue().getAbsolutePath();
+            ArrayList<FileInfo> copyingFiles = new ArrayList<>((ArrayList<FileInfo>) mh.getReceivedObj());
+            for(FileInfo fileInfo : copyingFiles){
+                String destination = fileInfo.getNewValue().getAbsolutePath();
                 if (destination.equals(SERVER_FOLDER_NAME + "\\")) {
                     destination = mh.getUserFilesPath().toString();
                 }
@@ -300,10 +300,10 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     //region Refreshing
     private void refresh() {
-        var dir = new Folder(new FileInfo(mh.getUserFilesPath()), SERVER_FOLDER_NAME);
+        Folder dir = new Folder(new FileInfo(mh.getUserFilesPath()), SERVER_FOLDER_NAME);
         createFileTree(mh.getUserFilesPath(), dir, SERVER_FOLDER_NAME);
-        var dirBytes = ObjectEncoderDecoder.convertObjectToByteArray(dir);
-        var bb = ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes);
+        byte[] dirBytes = ObjectEncoderDecoder.convertObjectToByteArray(dir);
+        ByteBuf bb = ObjectEncoderDecoder.EncodeByteArraysToByteBuf(dirBytes);
         mh.getCtx().writeAndFlush(bb);
         mh.clearStage();
     }

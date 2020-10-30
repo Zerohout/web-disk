@@ -25,10 +25,10 @@ public class Network {
     }
 
     public void start(CountDownLatch countDownLatch, CountDownLatch handlerLatch) {
-        var group = new NioEventLoopGroup();
+        NioEventLoopGroup group = new NioEventLoopGroup();
         try {
             logger.info("creating bootstrap");
-            var bootstrap = new Bootstrap();
+            Bootstrap bootstrap = new Bootstrap();
             logger.info("creating bootstrap group");
             bootstrap.group(group)
                     .channel(NioSocketChannel.class)
@@ -44,7 +44,7 @@ public class Network {
                         }
                     });
 
-            var channelFuture = bootstrap.connect().sync();
+            ChannelFuture channelFuture = bootstrap.connect().sync();
             countDownLatch.countDown();
 
             authHandler.onSuccessfulConnection();

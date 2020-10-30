@@ -29,7 +29,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
             onMouseItem = (EditableTreeCell) event.getTarget();
             onMouseItem.getStyleClass().add("selected-tree-cell");
             if (onMouseItem.getFileName().equals("")) return;
-            var fileInfo = onMouseItem.getFileInfo();
+            FileInfo fileInfo = onMouseItem.getFileInfo();
             if (fileInfo.isFolder()) {
                 destinationPath = Path.of(fileInfo.getAbsolutePath());
             } else {
@@ -46,7 +46,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     @Override
     public void updateSelected(boolean b) {
         super.updateSelected(b);
-        var selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
+        int selectedItemsCount = getTreeView().getSelectionModel().getSelectedItems().size();
         filesController.getDeleteBtn().setDisable(selectedItemsCount == 0);
         filesController.getCancelBtn().setDisable(selectedItemsCount == 0);
         filesController.getDownloadBtn().setDisable(selectedItemsCount == 0);
@@ -92,7 +92,7 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
         }
         setText(null);
         setGraphic(textField);
-        var extSize = FilenameUtils.getExtension(textField.getText()).length() + 1;
+        int extSize = FilenameUtils.getExtension(textField.getText()).length() + 1;
         textField.requestFocus();
         textField.selectRange(0, textField.getText().length() - extSize);
     }
@@ -118,9 +118,9 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     }
 
     private void editItem() {
-        var editedFileInfo = new FileInfo();
+        FileInfo editedFileInfo = new FileInfo();
         editedFileInfo.setName(textField.getText());
-        var oldPath = getFileInfo().getAbsolutePath();
+        String oldPath = getFileInfo().getAbsolutePath();
         oldPath = oldPath.replace(getFileInfo().getName(), "") + textField.getText();
         editedFileInfo.setAbsolutePath(oldPath);
 
@@ -145,46 +145,46 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
     private ContextMenu createContextMenu() {
         ContextMenu cm = new ContextMenu();
 
-        var refresh = new MenuItem("Refresh");
+        MenuItem refresh = new MenuItem("Refresh");
         refresh.setOnAction(actionEvent -> filesController.getRefreshBtn().fire());
         cm.getItems().add(refresh);
-        var add = new MenuItem("Add");
+        MenuItem add = new MenuItem("Add");
         add.setOnAction(actionEvent -> filesController.getAddBtn().fire());
         if (!filesController.getAddBtn().isDisable()) {
             cm.getItems().add(add);
         }
-        var addFolder = new MenuItem("Add folder");
+        MenuItem addFolder = new MenuItem("Add folder");
         addFolder.setOnAction(actionEvent -> filesController.getAddFolderBtn().fire());
         if (!filesController.getAddFolderBtn().isDisable()) {
             cm.getItems().add(addFolder);
         }
-        var download = new MenuItem(filesController.isServerFilesController()
+        MenuItem download = new MenuItem(filesController.isServerFilesController()
                 ? "Download" : "Upload");
         download.setOnAction(actionEvent -> filesController.getDownloadBtn().fire());
         if (!filesController.getDownloadBtn().isDisable()) {
             cm.getItems().add(download);
         }
-        var copy = new MenuItem("Copy");
+        MenuItem copy = new MenuItem("Copy");
         copy.setOnAction(actionEvent -> filesController.getCopyBtn().fire());
         if (!filesController.getCopyBtn().isDisable()) {
             cm.getItems().add(copy);
         }
-        var cut = new MenuItem("Cut");
+        MenuItem cut = new MenuItem("Cut");
         cut.setOnAction(actionEvent -> filesController.getCutBtn().fire());
         if (!filesController.getCutBtn().isDisable()) {
             cm.getItems().add(cut);
         }
-        var paste = new MenuItem("Paste");
+        MenuItem paste = new MenuItem("Paste");
         paste.setOnAction(actionEvent -> filesController.getPasteBtn().fire());
         if (!filesController.getPasteBtn().isDisable()) {
             cm.getItems().add(paste);
         }
-        var delete = new MenuItem("Delete");
+        MenuItem delete = new MenuItem("Delete");
         delete.setOnAction(actionEvent -> filesController.getDeleteBtn().fire());
         if (!filesController.getDeleteBtn().isDisable()) {
             cm.getItems().add(delete);
         }
-        var cancel = new MenuItem("Cancel");
+        MenuItem cancel = new MenuItem("Cancel");
         cancel.setOnAction(actionEvent -> filesController.getCancelBtn().fire());
         if (!filesController.getCancelBtn().isDisable()) {
             cm.getItems().add(cancel);
@@ -194,15 +194,15 @@ public class EditableTreeCell extends TreeCell<FileInfo> {
 
     private ContextMenu createNullItemContextMenu() {
         ContextMenu cm = new ContextMenu();
-        var refresh = new MenuItem("Refresh");
+        MenuItem refresh = new MenuItem("Refresh");
         refresh.setOnAction(actionEvent -> filesController.getRefreshBtn().fire());
         cm.getItems().add(refresh);
-        var add = new MenuItem("Add");
+        MenuItem add = new MenuItem("Add");
         add.setOnAction(actionEvent -> filesController.getAddBtn().fire());
         if (!filesController.getAddBtn().isDisable()) {
             cm.getItems().add(add);
         }
-        var addFolder = new MenuItem("Add folder");
+        MenuItem addFolder = new MenuItem("Add folder");
         addFolder.setOnAction(actionEvent -> filesController.getAddFolderBtn().fire());
         if (!filesController.getAddFolderBtn().isDisable()) {
             cm.getItems().add(addFolder);

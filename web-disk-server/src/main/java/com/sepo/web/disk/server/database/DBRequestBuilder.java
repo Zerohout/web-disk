@@ -25,9 +25,9 @@ public class DBRequestBuilder {
                 || args[0].equals("") || args[0].equals("*")) {
             requestParts.add("*");
         } else {
-            var size = args.length;
-            for (var i = 0; i < size; i++) {
-                var arg = args[i];
+            int size = args.length;
+            for (int i = 0; i < size; i++) {
+                String arg = args[i];
                 if (i != size - 1) {
                     arg += ",";
                 }
@@ -65,8 +65,8 @@ public class DBRequestBuilder {
     public <T> DBRequestBuilder update(String key, T value) {
         checkUpdate();
         if (requestParts.size() >= 2) {
-            var index = requestParts.size() - 1;
-            var temp = requestParts.get(index);
+            int index = requestParts.size() - 1;
+            String temp = requestParts.get(index);
             temp += ",";
             requestParts.remove(index);
             requestParts.add(temp);
@@ -86,7 +86,7 @@ public class DBRequestBuilder {
     //region INSERT
     public <T> DBRequestBuilder insert(String key, T value) {
         checkInsert();
-        var valuesIndex = insertParts.indexOf(VALUES);
+        int valuesIndex = insertParts.indexOf(VALUES);
         if (valuesIndex == insertParts.size() - 1) {
             insertParts.add(valuesIndex, String.format("(%s)", key));
             if (value instanceof String) {
@@ -97,12 +97,12 @@ public class DBRequestBuilder {
                 insertParts.add(String.format("(%d)", (Boolean) value ? 1 : 0));
             }
         } else {
-            var lastKey = insertParts.get(valuesIndex - 1).replace(")", ",");
+            String lastKey = insertParts.get(valuesIndex - 1).replace(")", ",");
             insertParts.remove(valuesIndex - 1);
             insertParts.add(valuesIndex - 1, lastKey);
             insertParts.add(valuesIndex, key + ")");
 
-            var lastValue = insertParts.get(insertParts.size() - 1).replace(")", ",");
+            String lastValue = insertParts.get(insertParts.size() - 1).replace(")", ",");
             insertParts.remove(insertParts.size() - 1);
             insertParts.add(lastValue);
             if (value instanceof String) {
@@ -134,9 +134,9 @@ public class DBRequestBuilder {
     }
 
     public String build() {
-        var out = new StringBuilder();
-        var size = requestParts.size();
-        for (var i = 0; i < size; i++) {
+        StringBuilder out = new StringBuilder();
+        int size = requestParts.size();
+        for (int i = 0; i < size; i++) {
             out.append(requestParts.get(i));
             out.append(i != size - 1 ? " " : ";");
         }

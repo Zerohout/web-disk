@@ -24,7 +24,7 @@ public class ClientApp extends Application {
         scene = new Scene(loadFXML("signIn"));
         stage.setScene(scene);
         stage.show();
-        var connection = new Thread(MainBridge::connectToServer);
+        Thread connection = new Thread(MainBridge::connectToServer);
         connection.setDaemon(true);
         Platform.runLater(connection::start);
     }

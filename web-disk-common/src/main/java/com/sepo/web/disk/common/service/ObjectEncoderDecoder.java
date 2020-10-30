@@ -16,13 +16,13 @@ public class ObjectEncoderDecoder {
     }
 
     public static ByteBuf EncodeByteArraysToByteBuf(byte[]... bytes) {
-        var arrSize = 0;
+        int arrSize = 0;
 
-        for (var arr : bytes) arrSize += arr.length;
+        for (byte[] arr : bytes) arrSize += arr.length;
 
-        var out = new byte[arrSize];
+        byte[] out = new byte[arrSize];
         for (int i = 0, k = 0; i < bytes.length; i++) {
-            for (var j = 0; j < bytes[i].length; j++, k++) {
+            for (int j = 0; j < bytes[i].length; j++, k++) {
                 out[k] = bytes[i][j];
             }
         }
@@ -30,8 +30,8 @@ public class ObjectEncoderDecoder {
     }
 
     public static byte[] convertObjectToByteArray(Object obj) {
-        try (var baos = new ByteArrayOutputStream();
-             var oos = new ObjectOutputStream(baos)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(obj);
             return baos.toByteArray();
         } catch (Exception ex) {
@@ -41,8 +41,8 @@ public class ObjectEncoderDecoder {
     }
 
     public static Object convertByteArrayToObject(byte[] arr) {
-        try (var bais = new ByteArrayInputStream(arr);
-             var ois = new ObjectInputStream(bais)) {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(arr);
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
             return ois.readObject();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -51,8 +51,8 @@ public class ObjectEncoderDecoder {
     }
 
     public static Object DecodeByteBufToObject(ByteBuf bb) {
-        try (var bbis = new ByteBufInputStream(bb, bb.readableBytes());
-             var ois = new ObjectInputStream(bbis)) {
+        try (ByteBufInputStream bbis = new ByteBufInputStream(bb, bb.readableBytes());
+             ObjectInputStream ois = new ObjectInputStream(bbis)) {
             return ois.readObject();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -61,7 +61,7 @@ public class ObjectEncoderDecoder {
     }
 
     public static int getObjectBytesCount(Object obj){
-        var objByteArr = convertObjectToByteArray(obj);
+        byte[] objByteArr = convertObjectToByteArray(obj);
         return objByteArr.length;
     }
 }
