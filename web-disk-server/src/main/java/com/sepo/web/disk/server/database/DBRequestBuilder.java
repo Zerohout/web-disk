@@ -1,11 +1,14 @@
 package com.sepo.web.disk.server.database;
 
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 
 /**
     LinqToSql analog
  **/
 
+@Component
 public class DBRequestBuilder {
     private final String SELECT = "SELECT";
     private final String FROM_DB = "FROM users";
