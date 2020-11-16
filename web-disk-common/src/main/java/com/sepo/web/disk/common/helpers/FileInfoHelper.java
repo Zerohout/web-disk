@@ -5,10 +5,14 @@ import javafx.scene.image.Image;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 public class FileInfoHelper {
+
+
     public static Image setFileInfoIcon(String absolutePath) {
         var file = new File(absolutePath);
+
         var extension = FilenameUtils.getExtension(file.getName());
         String iconName;
         if (file.isDirectory()) {
